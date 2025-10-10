@@ -1,0 +1,257 @@
+{% extends "layouts/auth.html" %}
+{% load crispy_forms_tags %}
+
+{% block title %}Sign Up • Fake News Detector{% endblock %}
+
+{% block visual_title %}Join the Fight Against Misinformation{% endblock %}
+{% block visual_subtitle %}Create your account and start verifying news with our advanced AI-powered fact-checking system.{% endblock %}
+
+{% block form_content %}
+    <div class="brand">Fake News Detector</div>
+    
+    <!-- SIGNUP FORM -->
+    <div id="signupForm" class="auth-form active">
+        <h1 class="welcome mb-1">Create Account</h1>
+        <p class="subtitle">Enter your details to create your account</p>
+        
+        {% if form.errors %}
+            <div class="alert alert-danger">
+                {% for field, errors in form.errors.items %}
+                    {% for error in errors %}
+                        {{ error }}<br>
+                    {% endfor %}
+                {% endfor %}
+            </div>
+        {% endif %}
+        
+        <form method="post" novalidate>
+            {% csrf_token %}
+            <div class="mb-3">
+                <label class="form-label" for="id_username">Username*</label>
+                <input type="text" class="form-control" id="id_username" name="username" placeholder="Enter your username" required>
+            </div>
+            <div class="mb-3">
+                <label class="form-label" for="id_email">Email Address*</label>
+                <input type="email" class="form-control" id="id_email" name="email" placeholder="Enter your email address" required>
+            </div>
+            <div class="mb-3">
+                <label class="form-label" for="id_password1">Password*</label>
+                <input type="password" class="form-control" id="id_password1" name="password1" placeholder="Enter your password" required>
+                <div class="password-strength" id="passwordStrength" style="display: none;">
+                    <div class="strength-bar">
+                        <div class="strength-fill" id="strengthFill"></div>
+                    </div>
+                    <div class="strength-text" id="strengthText">Password strength</div>
+                </div>
+            </div>
+            <div class="mb-3">
+                <label class="form-label" for="id_password2">Confirm Password*</label>
+                <input type="password" class="form-control" id="id_password2" name="password2" placeholder="Confirm your password" required>
+                <div class="password-match" id="passwordMatch" style="display: none;"></div>
+            </div>
+            <button type="submit" class="btn-primary-solid">Sign Up</button>
+        </form>
+        
+        <div class="mt-3">
+            <a href="/accounts/google/login/" class="g-btn">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                    <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+                    <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+                    <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
+                    <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+                </svg>
+                Sign Up with Google
+            </a>
+        </div>
+        
+        <div class="switch-auth">Already have an account? <a href="{% url 'dashboard:login' %}">Sign In</a></div>
+    </div>
+    
+    <div class="back-home"><a class="link-muted" href="/">← Back to Home</a></div>
+{% endblock %}
+
+{% block extra_css %}
+{{ block.super }}
+<style>
+.password-strength {
+    margin-top: 8px;
+}
+
+.strength-bar {
+    width: 100%;
+    height: 4px;
+    background: #e5e7eb;
+    border-radius: 2px;
+    overflow: hidden;
+}
+
+.strength-fill {
+    height: 100%;
+    width: 0%;
+    transition: all 0.3s ease;
+    border-radius: 2px;
+}
+
+.strength-text {
+    font-size: 0.75rem;
+    margin-top: 4px;
+    font-weight: 500;
+}
+
+.password-match {
+    font-size: 0.75rem;
+    margin-top: 4px;
+    font-weight: 500;
+}
+
+.strength-weak { background: #ef4444; }
+.strength-fair { background: #f59e0b; }
+.strength-good { background: #10b981; }
+.strength-strong { background: #059669; }
+
+.text-weak { color: #ef4444; }
+.text-fair { color: #f59e0b; }
+.text-good { color: #10b981; }
+.text-strong { color: #059669; }
+.text-match { color: #10b981; }
+.text-no-match { color: #ef4444; }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Password strength checker
+function checkPasswordStrength(password) {
+    let score = 0;
+    let feedback = [];
+    
+    if (password.length >= 8) score += 1;
+    else feedback.push('At least 8 characters');
+    
+    if (/[a-z]/.test(password)) score += 1;
+    else feedback.push('Lowercase letter');
+    
+    if (/[A-Z]/.test(password)) score += 1;
+    else feedback.push('Uppercase letter');
+    
+    if (/[0-9]/.test(password)) score += 1;
+    else feedback.push('Number');
+    
+    if (/[^A-Za-z0-9]/.test(password)) score += 1;
+    else feedback.push('Special character');
+    
+    return { score, feedback };
+}
+
+// Update password strength indicator
+function updatePasswordStrength(password) {
+    const strengthDiv = document.getElementById('passwordStrength');
+    const strengthFill = document.getElementById('strengthFill');
+    const strengthText = document.getElementById('strengthText');
+    
+    if (password.length === 0) {
+        strengthDiv.style.display = 'none';
+        return;
+    }
+    
+    strengthDiv.style.display = 'block';
+    const { score, feedback } = checkPasswordStrength(password);
+    
+    const percentage = (score / 5) * 100;
+    strengthFill.style.width = percentage + '%';
+    
+    // Remove all strength classes
+    strengthFill.className = 'strength-fill';
+    strengthText.className = 'strength-text';
+    
+    if (score <= 2) {
+        strengthFill.classList.add('strength-weak');
+        strengthText.classList.add('text-weak');
+        strengthText.textContent = 'Weak password';
+    } else if (score === 3) {
+        strengthFill.classList.add('strength-fair');
+        strengthText.classList.add('text-fair');
+        strengthText.textContent = 'Fair password';
+    } else if (score === 4) {
+        strengthFill.classList.add('strength-good');
+        strengthText.classList.add('text-good');
+        strengthText.textContent = 'Good password';
+    } else {
+        strengthFill.classList.add('strength-strong');
+        strengthText.classList.add('text-strong');
+        strengthText.textContent = 'Strong password';
+    }
+}
+
+// Check password match
+function checkPasswordMatch(password1, password2) {
+    const matchDiv = document.getElementById('passwordMatch');
+    
+    if (password2.length === 0) {
+        matchDiv.style.display = 'none';
+        return;
+    }
+    
+    matchDiv.style.display = 'block';
+    matchDiv.className = 'password-match';
+    
+    if (password1 === password2) {
+        matchDiv.classList.add('text-match');
+        matchDiv.textContent = '✓ Passwords match';
+    } else {
+        matchDiv.classList.add('text-no-match');
+        matchDiv.textContent = '✗ Passwords do not match';
+    }
+}
+
+// Handle form submission with loading state and validation
+document.addEventListener('DOMContentLoaded', function() {
+    const password1 = document.getElementById('id_password1');
+    const password2 = document.getElementById('id_password2');
+    const signupForm = document.querySelector('form');
+    
+    // Password strength checking
+    password1.addEventListener('input', function() {
+        updatePasswordStrength(this.value);
+        if (password2.value) {
+            checkPasswordMatch(this.value, password2.value);
+        }
+    });
+    
+    // Password match checking
+    password2.addEventListener('input', function() {
+        checkPasswordMatch(password1.value, this.value);
+    });
+    
+    // Form submission
+    if (signupForm) {
+        signupForm.addEventListener('submit', function(e) {
+            const submitBtn = this.querySelector('button[type="submit"]');
+            const originalText = submitBtn.textContent;
+            
+            // Basic validation
+            if (password1.value !== password2.value) {
+                e.preventDefault();
+                alert('Passwords do not match!');
+                return;
+            }
+            
+            if (password1.value.length < 8) {
+                e.preventDefault();
+                alert('Password must be at least 8 characters long!');
+                return;
+            }
+            
+            submitBtn.textContent = 'Creating Account...';
+            submitBtn.disabled = true;
+            
+            // Re-enable button after a delay if form doesn't redirect
+            setTimeout(() => {
+                submitBtn.textContent = originalText;
+                submitBtn.disabled = false;
+            }, 3000);
+        });
+    }
+});
+</script>
+{% endblock %}

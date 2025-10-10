@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Your Verification Code</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f8f9fa;
+        }
+        .container {
+            background: white;
+            border-radius: 10px;
+            padding: 30px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .header {
+            text-align: center;
+            padding: 20px 0;
+            border-bottom: 2px solid #0099ff;
+            margin-bottom: 30px;
+        }
+        .logo {
+            font-size: 24px;
+            font-weight: bold;
+            color: #0099ff;
+        }
+        .content {
+            text-align: center;
+            padding: 20px 0;
+        }
+        .otp-code {
+            font-size: 36px;
+            font-weight: bold;
+            color: #0099ff;
+            background: #f0f8ff;
+            padding: 20px;
+            border-radius: 10px;
+            letter-spacing: 8px;
+            margin: 20px 0;
+            border: 2px dashed #0099ff;
+        }
+        .warning {
+            background-color: #fff3cd;
+            border: 1px solid #ffeaa7;
+            color: #856404;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+            text-align: left;
+        }
+        .footer {
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid #eee;
+            font-size: 14px;
+            color: #666;
+            text-align: center;
+        }
+        .instructions {
+            background-color: #e7f3ff;
+            border-left: 4px solid #0099ff;
+            padding: 15px;
+            margin: 20px 0;
+            text-align: left;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logo">🛡️ Fake News Detector</div>
+        </div>
+        
+        <div class="content">
+            <h2>Email Verification Required</h2>
+            
+            <p>Hello{% if user.first_name %} {{ user.first_name }}{% endif %}!</p>
+            
+            <p>To complete your registration for Fake News Detector, please use the verification code below:</p>
+            
+            <div class="otp-code">{{ otp }}</div>
+            
+            <div class="instructions">
+                <h4>📝 Instructions:</h4>
+                <ol>
+                    <li>Enter this 6-digit code on the verification page</li>
+                    <li>The code is valid for <strong>10 minutes</strong></li>
+                    <li>You have <strong>3 attempts</strong> to enter the correct code</li>
+                    <li>If you need a new code, click "Resend OTP" on the verification page</li>
+                </ol>
+            </div>
+            
+            <div class="warning">
+                <strong>⚠️ Security Notice:</strong>
+                <ul style="margin: 10px 0;">
+                    <li>Never share this code with anyone</li>
+                    <li>Our team will never ask for this code via phone or email</li>
+                    <li>If you didn't request this code, please ignore this email</li>
+                </ul>
+            </div>
+            
+            <p>Once verified, you'll have access to:</p>
+            <ul style="text-align: left; display: inline-block;">
+                <li>✅ AI-powered fact-checking tools</li>
+                <li>🤖 Intelligent misinformation detection</li>
+                <li>📊 Detailed analysis reports</li>
+                <li>🔍 Multi-source verification</li>
+            </ul>
+        </div>
+        
+        <div class="footer">
+            <p>Best regards,<br>The Fake News Detector Team</p>
+            <p><small>This is an automated email. Please do not reply to this message.</small></p>
+        </div>
+    </div>
+</body>
+</html>

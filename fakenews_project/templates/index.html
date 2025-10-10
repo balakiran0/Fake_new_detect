@@ -1,0 +1,563 @@
+{% extends "layouts/dashboard.html" %}
+{% load static %}
+
+{% block title %}Fake News Detection — Dashboard{% endblock %}
+
+{% block extra_css %}
+/* Chat-specific styles */
+.typing-indicator {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.typing-dots {
+    display: flex;
+    gap: 4px;
+}
+
+.typing-dots span {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--accent-primary);
+    animation: typing 1.4s infinite ease-in-out;
+}
+
+.typing-dots span:nth-child(1) { animation-delay: -0.32s; }
+.typing-dots span:nth-child(2) { animation-delay: -0.16s; }
+
+@keyframes typing {
+    0%, 80%, 100% { transform: scale(0); opacity: 0.5; }
+    40% { transform: scale(1); opacity: 1; }
+}
+
+.file-upload-area {
+    border: 2px dashed var(--glass-border);
+    border-radius: 12px;
+    padding: 1rem;
+    text-align: center;
+    margin-bottom: 1rem;
+    transition: var(--transition);
+}
+
+.file-upload-area:hover {
+    border-color: var(--accent-primary);
+    background: var(--glass-bg);
+}
+
+.file-upload-area.dragover {
+    border-color: var(--accent-primary);
+    background: rgba(0, 212, 255, 0.1);
+}
+
+.upload-icon {
+    font-size: 2rem;
+    color: var(--text-secondary);
+    margin-bottom: 0.5rem;
+}
+
+.file-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+}
+
+.file-item {
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    border-radius: 8px;
+    padding: 0.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.875rem;
+}
+
+.file-remove {
+    background: none;
+    border: none;
+    color: var(--danger);
+    cursor: pointer;
+    font-size: 1rem;
+}
+
+.analysis-result {
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    border-radius: 12px;
+    padding: 1rem;
+    margin-top: 1rem;
+}
+
+.verdict-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    font-weight: 600;
+    font-size: 0.875rem;
+}
+
+.verdict-real { background: rgba(0, 255, 136, 0.2); color: var(--success); }
+.verdict-fake { background: rgba(255, 71, 87, 0.2); color: var(--danger); }
+.verdict-mixed { background: rgba(255, 170, 0, 0.2); color: var(--warning); }
+
+/* Modal styles */
+.modal-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(5px);
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal-content {
+    background: var(--bg-secondary);
+    border: 1px solid var(--glass-border);
+    border-radius: 16px;
+    padding: 2rem;
+    max-width: 90vw;
+    max-height: 90vh;
+    overflow-y: auto;
+    position: relative;
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+}
+
+.modal-close {
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    font-size: 1.5rem;
+    cursor: pointer;
+    padding: 0.5rem;
+    border-radius: 8px;
+    transition: var(--transition);
+}
+
+.modal-close:hover {
+    background: var(--glass-bg);
+    color: var(--text-primary);
+}
+{% endblock %}
+
+{% block main_content %}
+<div class="chat-container">
+    <div class="chat-header">
+        <div>
+            <h2 style="margin: 0; font-size: 1.5rem; font-weight: 700;">AI Fact Checker</h2>
+            <div class="status-indicator">
+                <div class="status-dot"></div>
+                <span>AI Online • Real-time Analysis</span>
+            </div>
+        </div>
+        <div style="display: flex; gap: 0.5rem;">
+            <button class="btn btn-sm" onclick="showModal('reports')" style="background: var(--glass-bg); border: 1px solid var(--glass-border); color: var(--text-primary);">
+                <i class="fas fa-chart-line"></i> Reports
+            </button>
+            <button class="btn btn-sm" onclick="showModal('settings')" style="background: var(--glass-bg); border: 1px solid var(--glass-border); color: var(--text-primary);">
+                <i class="fas fa-cog"></i> Settings
+            </button>
+        </div>
+    </div>
+    
+    <div class="chat-messages" id="chatMessages">
+        <div id="messagesList">
+            <!-- Welcome message -->
+            <div class="message assistant">
+                <div class="message-avatar">AI</div>
+                <div class="message-content">
+                    <strong>👋 Welcome to the Enhanced Fake News Detector!</strong><br><br>
+                    I can help you verify information using our advanced 8-step verification pipeline. You can:<br>
+                    • <strong>Chat with me</strong> about any topic<br>
+                    • <strong>Analyze text</strong> for misinformation<br>
+                    • <strong>Upload files</strong> (PDF, images, videos)<br>
+                    • <strong>Check URLs</strong> for credibility<br><br>
+                    What would you like to verify today?
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="chat-input">
+        <!-- File upload area -->
+        <div class="file-upload-area" id="fileUploadArea" style="display: none;">
+            <div class="upload-icon">
+                <i class="fas fa-cloud-upload-alt"></i>
+            </div>
+            <div>Drop files here or click to upload</div>
+            <input type="file" id="fileInput" multiple accept=".pdf,.jpg,.jpeg,.png,.gif,.mp4,.mov,.avi" style="display: none;">
+            <div class="file-list" id="fileList"></div>
+        </div>
+        
+        <div class="input-container">
+            <button type="button" class="btn" onclick="toggleFileUpload()" style="background: var(--glass-bg); border: 1px solid var(--glass-border); color: var(--text-primary); border-radius: 12px; width: 44px; height: 44px;">
+                <i class="fas fa-paperclip"></i>
+            </button>
+            <textarea 
+                id="messageInput" 
+                class="input-field" 
+                placeholder="Ask me anything or paste content to verify..."
+                rows="1"
+            ></textarea>
+            <button type="button" class="send-btn" onclick="sendMessage()">
+                <i class="fas fa-paper-plane"></i>
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Modals -->
+<div id="modalBackdrop" class="modal-backdrop" style="display: none;" onclick="closeModal()">
+    <div class="modal-content" onclick="event.stopPropagation()">
+        <div class="modal-header">
+            <h3 id="modalTitle">Modal</h3>
+            <button class="modal-close" onclick="closeModal()">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div id="modalBody">
+            <!-- Modal content will be loaded here -->
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Global variables
+let uploadedFiles = [];
+let currentConversationId = null;
+
+// CSRF Token helper
+function getCSRFToken() {
+    return document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+}
+
+// File upload functionality
+function toggleFileUpload() {
+    const uploadArea = document.getElementById('fileUploadArea');
+    uploadArea.style.display = uploadArea.style.display === 'none' ? 'block' : 'none';
+}
+
+function setupFileUpload() {
+    const fileInput = document.getElementById('fileInput');
+    const uploadArea = document.getElementById('fileUploadArea');
+    const fileList = document.getElementById('fileList');
+    
+    // Click to upload
+    uploadArea.addEventListener('click', () => fileInput.click());
+    
+    // Drag and drop
+    uploadArea.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        uploadArea.classList.add('dragover');
+    });
+    
+    uploadArea.addEventListener('dragleave', () => {
+        uploadArea.classList.remove('dragover');
+    });
+    
+    uploadArea.addEventListener('drop', (e) => {
+        e.preventDefault();
+        uploadArea.classList.remove('dragover');
+        handleFiles(e.dataTransfer.files);
+    });
+    
+    fileInput.addEventListener('change', (e) => {
+        handleFiles(e.target.files);
+    });
+}
+
+function handleFiles(files) {
+    Array.from(files).forEach(file => {
+        if (file.size > 10 * 1024 * 1024) { // 10MB limit
+            showToast('File too large. Maximum size is 10MB.', 'warning');
+            return;
+        }
+        
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const fileData = {
+                name: file.name,
+                type: file.type,
+                data: e.target.result,
+                size: file.size
+            };
+            uploadedFiles.push(fileData);
+            updateFileList();
+        };
+        reader.readAsDataURL(file);
+    });
+}
+
+function updateFileList() {
+    const fileList = document.getElementById('fileList');
+    fileList.innerHTML = '';
+    
+    uploadedFiles.forEach((file, index) => {
+        const fileItem = document.createElement('div');
+        fileItem.className = 'file-item';
+        fileItem.innerHTML = `
+            <i class="fas fa-file"></i>
+            <span>${file.name}</span>
+            <button class="file-remove" onclick="removeFile(${index})">
+                <i class="fas fa-times"></i>
+            </button>
+        `;
+        fileList.appendChild(fileItem);
+    });
+}
+
+function removeFile(index) {
+    uploadedFiles.splice(index, 1);
+    updateFileList();
+}
+
+// Chat functionality
+function addMessage(content, isUser = false, isTyping = false) {
+    const messagesList = document.getElementById('messagesList');
+    
+    const messageDiv = document.createElement('div');
+    messageDiv.className = `message ${isUser ? 'user' : 'assistant'}`;
+    
+    if (isTyping) {
+        messageDiv.innerHTML = `
+            <div class="message-avatar">AI</div>
+            <div class="message-content typing-indicator">
+                <div class="typing-dots">
+                    <span></span><span></span><span></span>
+                </div>
+                Thinking...
+            </div>
+        `;
+        messageDiv.id = 'typing-message';
+    } else {
+        const renderedContent = isUser ? content : renderMarkdown(content);
+        messageDiv.innerHTML = `
+            <div class="message-avatar">${isUser ? 'You' : 'AI'}</div>
+            <div class="message-content">${renderedContent}</div>
+        `;
+    }
+    
+    messagesList.appendChild(messageDiv);
+    messagesList.scrollTop = messagesList.scrollHeight;
+    return messageDiv;
+}
+
+function removeTypingMessage() {
+    const typingMsg = document.getElementById('typing-message');
+    if (typingMsg) typingMsg.remove();
+}
+
+function renderMarkdown(text) {
+    return text
+        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+        .replace(/\*(.*?)\*/g, '<em>$1</em>')
+        .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" style="color: var(--accent-primary); text-decoration: underline;">$1</a>')
+        .replace(/\n/g, '<br>');
+}
+
+async function sendMessage() {
+    const input = document.getElementById('messageInput');
+    const message = input.value.trim();
+    
+    if (!message && uploadedFiles.length === 0) return;
+    
+    // Add user message
+    if (message) {
+        addMessage(message, true);
+    }
+    
+    // Show typing indicator
+    const typingMsg = addMessage('', false, true);
+    
+    // Clear input
+    input.value = '';
+    input.style.height = 'auto';
+    
+    try {
+        const requestData = {
+            text: message,
+            files: uploadedFiles
+        };
+        
+        const response = await fetch('/api/detect/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCSRFToken()
+            },
+            body: JSON.stringify(requestData)
+        });
+        
+        const data = await response.json();
+        
+        // Remove typing indicator
+        removeTypingMessage();
+        
+        if (data.intent === 'conversation') {
+            // Show conversational response
+            addMessage(data.response, false);
+        } else {
+            // Show analysis result
+            let resultMessage = `**${data.verification_method === 'enhanced' ? 'Enhanced' : 'Standard'} Analysis Result**\n\n`;
+            resultMessage += `**Verdict:** ${data.verdict}\n`;
+            resultMessage += `**Confidence:** ${Math.round(data.confidence * 100)}%\n\n`;
+            
+            if (data.enhanced_verification) {
+                resultMessage += `**Core Claim:** ${data.enhanced_verification.core_claim}\n\n`;
+                if (data.enhanced_verification.evidence_count > 0) {
+                    resultMessage += `**Evidence Sources:** ${data.enhanced_verification.evidence_count} found\n\n`;
+                }
+            }
+            
+            resultMessage += `**Explanation:** ${data.notes.summary}\n\n`;
+            
+            if (data.notes.sources && data.notes.sources.length > 0) {
+                resultMessage += `**Sources:**\n`;
+                data.notes.sources.forEach(source => {
+                    resultMessage += `• [${source.site}](${source.url}): ${source.title}\n`;
+                });
+            }
+            
+            addMessage(resultMessage, false);
+        }
+        
+        // Clear uploaded files
+        uploadedFiles = [];
+        updateFileList();
+        document.getElementById('fileUploadArea').style.display = 'none';
+        
+    } catch (error) {
+        removeTypingMessage();
+        addMessage('Sorry, there was an error processing your request. Please try again.', false);
+        console.error('Error:', error);
+    }
+}
+
+// Modal functionality
+function showModal(type) {
+    const modal = document.getElementById('modalBackdrop');
+    const title = document.getElementById('modalTitle');
+    const body = document.getElementById('modalBody');
+    
+    switch(type) {
+        case 'reports':
+            title.textContent = 'Analysis Reports';
+            body.innerHTML = '<p>Loading reports...</p>';
+            loadReports();
+            break;
+        case 'settings':
+            title.textContent = 'Settings';
+            body.innerHTML = `
+                <div class="mb-3">
+                    <h5>Preferences</h5>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="autoSave" checked>
+                        <label class="form-check-label" for="autoSave">Auto-save conversations</label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="soundEffects">
+                        <label class="form-check-label" for="soundEffects">Sound effects</label>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <h5>History</h5>
+                    <button class="btn btn-outline-danger" onclick="clearHistory()">Clear Chat History</button>
+                </div>
+            `;
+            break;
+    }
+    
+    modal.style.display = 'flex';
+}
+
+function closeModal() {
+    document.getElementById('modalBackdrop').style.display = 'none';
+}
+
+async function loadReports() {
+    try {
+        const response = await fetch('/api/recent-analyses/');
+        const data = await response.json();
+        
+        const body = document.getElementById('modalBody');
+        if (data.results && data.results.length > 0) {
+            let html = '<div class="row">';
+            data.results.forEach(result => {
+                const verdictClass = result.verdict === 'Real' ? 'verdict-real' : 'verdict-fake';
+                html += `
+                    <div class="col-md-6 mb-3">
+                        <div class="analysis-result">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span class="verdict-badge ${verdictClass}">${result.verdict}</span>
+                                <small class="text-muted">${new Date(result.created_at).toLocaleDateString()}</small>
+                            </div>
+                            <p class="mb-1">${result.snippet}...</p>
+                            <small class="text-muted">Confidence: ${Math.round(result.confidence * 100)}%</small>
+                        </div>
+                    </div>
+                `;
+            });
+            html += '</div>';
+            body.innerHTML = html;
+        } else {
+            body.innerHTML = '<p>No analysis reports found.</p>';
+        }
+    } catch (error) {
+        document.getElementById('modalBody').innerHTML = '<p>Error loading reports.</p>';
+    }
+}
+
+function clearHistory() {
+    if (confirm('Are you sure you want to clear all chat history?')) {
+        localStorage.removeItem('chat_messages');
+        location.reload();
+    }
+}
+
+// Auto-resize textarea
+function setupTextareaResize() {
+    const textarea = document.getElementById('messageInput');
+    textarea.addEventListener('input', function() {
+        this.style.height = 'auto';
+        this.style.height = Math.min(this.scrollHeight, 120) + 'px';
+    });
+    
+    // Send on Enter (but not Shift+Enter)
+    textarea.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            sendMessage();
+        }
+    });
+}
+
+// Initialize everything
+document.addEventListener('DOMContentLoaded', function() {
+    setupFileUpload();
+    setupTextareaResize();
+    
+    // Close modal on Escape key
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            closeModal();
+        }
+    });
+});
+</script>
+{% endblock %}

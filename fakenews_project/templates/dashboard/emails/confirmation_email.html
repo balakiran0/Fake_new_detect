@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Confirm Your Account</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .header {
+            text-align: center;
+            padding: 20px 0;
+            border-bottom: 2px solid #0099ff;
+            margin-bottom: 30px;
+        }
+        .logo {
+            font-size: 24px;
+            font-weight: bold;
+            color: #0099ff;
+        }
+        .content {
+            padding: 20px 0;
+        }
+        .button {
+            display: inline-block;
+            padding: 12px 30px;
+            background-color: #0099ff;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            margin: 20px 0;
+            font-weight: bold;
+        }
+        .footer {
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid #eee;
+            font-size: 14px;
+            color: #666;
+        }
+        .warning {
+            background-color: #fff3cd;
+            border: 1px solid #ffeaa7;
+            color: #856404;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="logo">🛡️ Fake News Detector</div>
+    </div>
+    
+    <div class="content">
+        <h2>Welcome to Fake News Detector, {{ user.first_name }}!</h2>
+        
+        <p>Thank you for signing up! To complete your registration and start using our AI-powered fact-checking platform, please confirm your email address by clicking the button below:</p>
+        
+        <div style="text-align: center;">
+            <a href="{{ confirmation_url }}" class="button">Confirm Email Address</a>
+        </div>
+        
+        <p>Or copy and paste this link into your browser:</p>
+        <p style="word-break: break-all; background-color: #f8f9fa; padding: 10px; border-radius: 5px;">
+            {{ confirmation_url }}
+        </p>
+        
+        <div class="warning">
+            <strong>⚠️ Important:</strong> This confirmation link will expire in 24 hours. If you don't confirm your email within this time, you'll need to sign up again.
+        </div>
+        
+        <p>Once confirmed, you'll be able to:</p>
+        <ul>
+            <li>✅ Analyze news articles and social media posts for misinformation</li>
+            <li>🤖 Chat with our AI fact-checking assistant</li>
+            <li>📊 Access detailed analysis reports and trends</li>
+            <li>🔍 Verify information from multiple sources</li>
+        </ul>
+        
+        <p>If you didn't create this account, you can safely ignore this email.</p>
+    </div>
+    
+    <div class="footer">
+        <p>Best regards,<br>The Fake News Detector Team</p>
+        <p><small>This is an automated email. Please do not reply to this message.</small></p>
+    </div>
+</body>
+</html>

@@ -1,0 +1,239 @@
+{% extends "layouts/auth.html" %}
+
+{% block title %}Email Verification - Fake News Detector{% endblock %}
+
+{% block visual_title %}Verify Your Email{% endblock %}
+{% block visual_subtitle %}Please check your email and click the verification link to activate your account and start using our fact-checking services.{% endblock %}
+
+{% block form_content %}
+    <div class="brand">Fake News Detector</div>
+    
+    <!-- EMAIL VERIFICATION SENT -->
+    <div id="verificationSentForm" class="verification-form">
+        <h1 class="welcome mb-1">Verification Sent!</h1>
+        <p class="subtitle">We've sent a verification email to your address</p>
+        
+        <div class="alert alert-info mb-4">
+            <i class="fas fa-envelope me-2"></i>
+            Please check your email and click the verification link to activate your account.
+        </div>
+        
+        <div class="mb-4">
+            <p class="text-muted small">
+                <strong>Didn't receive the email?</strong><br>
+                • Check your spam/junk folder<br>
+                • Make sure you entered the correct email address<br>
+                • Wait a few minutes for the email to arrive
+            </p>
+        </div>
+        
+        <div class="d-grid gap-2">
+            <button class="btn btn-outline-primary" onclick="showVerificationForm('resend')">Resend Email</button>
+            <a href="{% url 'dashboard:login' %}" class="btn-primary-solid">Continue to Login</a>
+        </div>
+    </div>
+
+    <!-- EMAIL CONFIRMATION (When user clicks email link) -->
+    <div id="confirmationForm" class="verification-form">
+        <h1 class="welcome mb-1">Confirm Email</h1>
+        <p class="subtitle">Please confirm your email address to activate your account</p>
+        
+        {% if confirmation %}
+            <div class="mb-4">
+                <p class="text-muted">
+                    Please confirm that <strong>{{ confirmation.email_address.email }}</strong> is an email address for user {{ confirmation.email_address.user }}.
+                </p>
+            </div>
+            
+            <form method="post">
+                {% csrf_token %}
+                <button type="submit" class="btn-primary-solid">Confirm Email Address</button>
+            </form>
+        {% else %}
+            <div class="alert alert-danger">
+                <i class="fas fa-exclamation-triangle me-2"></i>
+                This email confirmation link is invalid or has expired.
+            </div>
+            <div class="d-grid">
+                <button class="btn-primary-solid" onclick="showVerificationForm('resend')">Request New Verification</button>
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- RESEND VERIFICATION EMAIL -->
+    <div id="resendForm" class="verification-form">
+        <h1 class="welcome mb-1">Resend Verification</h1>
+        <p class="subtitle">Enter your email to receive a new verification link</p>
+        
+        <form id="resendVerificationForm">
+            {% csrf_token %}
+            <div class="mb-3">
+                <label class="form-label" for="resend_email">Email Address*</label>
+                <input type="email" class="form-control" id="resend_email" name="email" placeholder="Enter your email address" required>
+            </div>
+            <button type="submit" class="btn-primary-solid">Send Verification Email</button>
+        </form>
+        
+        <div class="mt-3">
+            <button class="btn btn-outline-secondary" onclick="showVerificationForm('verificationSent')">Back</button>
+        </div>
+    </div>
+
+    <!-- SUCCESS CONFIRMATION -->
+    <div id="successForm" class="verification-form">
+        <h1 class="welcome mb-1">Email Verified!</h1>
+        <p class="subtitle">Your email has been successfully verified</p>
+        
+        <div class="alert alert-success mb-4">
+            <i class="fas fa-check-circle me-2"></i>
+            Your account is now active. You can start using all features of our fact-checking platform.
+        </div>
+        
+        <div class="mb-4">
+            <p><strong>What you can do now:</strong></p>
+            <ul class="text-start">
+                <li>✅ Analyze news articles and social media posts</li>
+                <li>🤖 Chat with our AI fact-checking assistant</li>
+                <li>📊 Access detailed analysis reports</li>
+                <li>🔍 Verify information from multiple sources</li>
+            </ul>
+        </div>
+        
+        <div class="d-grid">
+            <a href="{% url 'dashboard:home' %}" class="btn-primary-solid">Start Fact-Checking</a>
+        </div>
+    </div>
+    
+    <div class="switch-auth">Already have an account? <a href="{% url 'dashboard:login' %}">Sign In</a></div>
+    <div class="back-home"><a class="link-muted" href="/">← Back to Home</a></div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Email verification form management
+function showVerificationForm(formType) {
+    // Hide all forms
+    document.querySelectorAll('.verification-form').forEach(form => {
+        form.classList.remove('active');
+        form.style.display = 'none';
+    });
+    
+    // Show selected form
+    const targetForm = document.getElementById(formType + 'Form');
+    if (targetForm) {
+        targetForm.style.display = 'block';
+        targetForm.classList.add('active');
+        
+        // Update visual content based on form type
+        updateVisualContent(formType);
+        
+        // Focus on first input
+        const firstInput = targetForm.querySelector('input');
+        if (firstInput) {
+            setTimeout(() => firstInput.focus(), 100);
+        }
+    }
+}
+
+// Update left panel content based on form type
+function updateVisualContent(formType) {
+    const titleElement = document.querySelector('.visual-title');
+    const subtitleElement = document.querySelector('.visual-sub');
+    
+    const content = {
+        verificationSent: {
+            title: 'Check Your Email',
+            subtitle: 'We\'ve sent a verification email to your address. Please check your inbox and click the verification link.'
+        },
+        confirmation: {
+            title: 'Confirm Your Email',
+            subtitle: 'Please confirm your email address to complete your account setup and start using our fact-checking services.'
+        },
+        resend: {
+            title: 'Resend Verification',
+            subtitle: 'Enter your email address to receive a new verification link.'
+        },
+        success: {
+            title: 'Welcome to Fake News Detector!',
+            subtitle: 'Your email has been verified. Start fighting misinformation with our AI-powered fact-checking platform.'
+        }
+    };
+    
+    if (content[formType]) {
+        if (titleElement) titleElement.textContent = content[formType].title;
+        if (subtitleElement) subtitleElement.textContent = content[formType].subtitle;
+    }
+}
+
+// Handle URL parameters and form detection
+document.addEventListener('DOMContentLoaded', function() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const step = urlParams.get('step');
+    const hasConfirmation = {{ confirmation|yesno:"true,false" }};
+    
+    // Determine which form to show
+    if (step) {
+        showVerificationForm(step);
+    } else if (hasConfirmation) {
+        showVerificationForm('confirmation');
+    } else if (window.location.pathname.includes('verification-sent')) {
+        showVerificationForm('verificationSent');
+    } else {
+        showVerificationForm('verificationSent');
+    }
+    
+    // Handle resend form submission
+    const resendForm = document.getElementById('resendVerificationForm');
+    if (resendForm) {
+        resendForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            handleResendVerification();
+        });
+    }
+});
+
+// Handle resend verification
+function handleResendVerification() {
+    const email = document.getElementById('resend_email').value;
+    const submitBtn = document.querySelector('#resendVerificationForm button[type="submit"]');
+    const originalText = submitBtn.textContent;
+    
+    if (!email) {
+        alert('Please enter your email address.');
+        return;
+    }
+    
+    submitBtn.textContent = 'Sending...';
+    submitBtn.disabled = true;
+    
+    // Simulate API call (replace with actual implementation)
+    setTimeout(() => {
+        submitBtn.textContent = originalText;
+        submitBtn.disabled = false;
+        showVerificationForm('verificationSent');
+    }, 1500);
+}
+
+// Smooth transitions
+const style = document.createElement('style');
+style.textContent = `
+    .verification-form {
+        display: none;
+        opacity: 0;
+        transform: translateY(20px);
+        transition: all 0.3s ease;
+    }
+    
+    .verification-form.active {
+        display: block;
+        opacity: 1;
+        transform: translateY(0);
+    }
+    
+    .visual-title, .visual-sub {
+        transition: all 0.3s ease;
+    }
+`;
+document.head.appendChild(style);
+</script>
+{% endblock %}
