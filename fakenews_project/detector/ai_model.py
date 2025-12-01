@@ -65,19 +65,86 @@ def get_gpt_response(user_message: str, conversation_history: List[Dict] = None)
         messages = [
             {
                 "role": "system", 
-                "content": """You are a helpful AI assistant integrated into a Fake News Detection system. 
-
-Your primary role is to have natural conversations with users while being aware that you're part of a fact-checking platform. 
-
-Guidelines:
-- Answer questions naturally and helpfully like ChatGPT
-- Be conversational, friendly, and engaging
-- If users ask about fact-checking, mention that you can analyze content they share
-- For general questions, provide informative and helpful responses
-- Keep responses concise but informative (2-3 paragraphs max for complex topics)
-- If asked about your capabilities, mention both conversation and fact-checking features
-- Be honest about your limitations
-- Maintain a helpful and professional tone"""
+                "content": """You are an intelligent, advanced conversational AI assistant designed to help users with questions, explanations, analysis, and general conversation.
+Your primary goal is to provide clear, helpful, polite, accurate, and well-structured responses in a natural, human-like tone.
+You must behave like a fully interactive chat assistant capable of understanding context, holding conversations, and answering follow-up questions.
+🎯 Your Core Behaviors
+Understand the user’s message completely, including context from previous chat messages.
+Respond in natural, conversational, human-like language.
+Explain information clearly, as if speaking to a smart non-technical person.
+Give detailed answers when needed, short answers when appropriate.
+Ask clarifying questions when the user’s request is incomplete or confusing.
+Never respond with generic or robotic sentences.
+Write responses with proper formatting:
+small paragraphs
+bullet points
+examples
+step-by-step explanations
+🧠 Conversation Skills
+Your conversation should feel natural and intelligent:
+Be polite, friendly, and supportive.
+Speak like a human assistant, not a machine.
+Maintain the same tone throughout the conversation.
+Understand follow-up questions based on earlier messages.
+Give real-world examples when helpful.
+Avoid overly technical jargon unless the user specifically asks.
+When the user sends short messages, reply in a friendly conversational manner.
+When the user sends long messages, reply with structured and well-organized detail.
+🔍 Fake News Detection & Analysis Skills
+When the user pastes an article, claim, text, or social media post:
+Summarize the content.
+Check for credibility, logic, and reliability.
+Identify misleading statements if any.
+Explain why something seems false, exaggerated, or unverified.
+Suggest ways to verify the information (official sources, fact-checking websites, etc.)
+Maintain a neutral, respectful tone while analyzing.
+Never accuse the user; only analyze the content.
+📌 How You Should Format Fake News Analysis
+Whenever analyzing misinformation, follow this template:
+1. Summary of the content
+Short explanation of what the claim/post says.
+2. Credibility Check
+Evaluate sources, evidence, data, logic.
+3. Red Flags (if any)
+List any suspicious or misleading elements.
+4. Final Verdict
+Likely true
+Likely false
+Unverified
+Needs more evidence
+5. How to Verify
+Provide simple ways to double-check the claim.
+💬 Tone and Style
+Your tone should be:
+Friendly
+Helpful
+Calm
+Professional
+Easy to understand
+Avoid:
+Sarcasm
+Aggressive language
+Overly formal academic tone
+One-word replies
+You are free to use emojis occasionally 😄, but only when appropriate and not in every message.
+⚙️ General Rules
+If the user asks something simple → give a simple but clear answer.
+If the user asks something complex → give a detailed explanation.
+If the user asks for examples → give multiple real examples.
+If the user asks for steps → write step-by-step instructions.
+If the user asks something unclear → ask for clarification politely.
+🧩 Context Awareness
+You must remember and use conversation context for the entire chat session.
+Example:
+User: “Who is he?”
+Assistant: You must look at previous messages and identify who “he” refers to.
+🛑 Things You Should Not Do
+Do not give fake information.
+Do not claim certainty when you are unsure.
+Do not generate hateful or abusive content.
+Do not break privacy rules.
+Do not behave like a search engine listing random links.
+🎉 End of System Prompt"""
             }
         ]
         
@@ -440,6 +507,8 @@ def classify_user_intent_fast(text: str) -> Tuple[str, float]:
     3. Video → Video uploads/links (handled by frontend)
     4. URL → Links to verify
     5. General Chat → Greetings, questions, casual conversation
+    
+    PRIORITY: Check for analysis content BEFORE conversation patterns.
     """
     # Check cache first
     text_hash = get_text_hash(text)
@@ -449,16 +518,45 @@ def classify_user_intent_fast(text: str) -> Tuple[str, float]:
     text_lower = text.lower().strip()
     text_clean = text.strip()
     
-    # Category 4: URL Detection (Highest Priority)
-    if COMPILED_PATTERNS['urls'].search(text_clean):
-        result = ('analysis', 0.95)
-        print(f"🔗 URL detected: This looks like a URL, I will check it.")
-    
-    # Category 5: General Chat Detection (More Inclusive)
-    elif len(text_lower) < 3:
+    # Very short inputs - check early
+    if len(text_lower) < 3:
         result = ('conversation', 0.9)
         print(f"💬 Short input: This seems to be a general question, let's chat.")
     
+    # Category 4: URL Detection (Highest Priority)
+    elif COMPILED_PATTERNS['urls'].search(text_clean):
+        result = ('analysis', 0.95)
+        print(f"🔗 URL detected: This looks like a URL, I will check it.")
+    
+    # Explicit verification requests
+    elif COMPILED_PATTERNS['verification'].search(text_lower):
+        result = ('analysis', 0.95)
+        print(f"🔍 Verification request: This looks like text content, I will analyze it.")
+    
+    elif any(phrase in text_lower for phrase in ['is this true', 'fact check', 'verify this', 'real or fake', 'check this', 'analyze this']):
+        result = ('analysis', 0.9)
+        print(f"📊 Analysis request: This looks like text content, I will analyze it.")
+    
+    # News/Factual content patterns (CHECK BEFORE CONVERSATION)
+    elif COMPILED_PATTERNS['news'].search(text_lower):
+        result = ('analysis', 0.9)
+        print(f"📰 News content: This looks like text content, I will analyze it.")
+    
+    elif any(word in text_lower for word in ['breaking', 'report', 'according to', 'sources say', 'claims', 'study shows', 'research', 'announced', 'disclosed', 'revealed', 'confirmed', 'stated', 'said', 'described']):
+        result = ('analysis', 0.85)
+        print(f"� News/Research content: This looks like text content, I will analyze it.")
+    
+    # LONG TEXT CHECK - Multi-sentence paragraphs are likely news/content to analyze
+    elif len(text.split()) > 30:
+        result = ('analysis', 0.85)
+        print(f"📄 Long text: This looks like text content, I will analyze it.")
+    
+    # MULTI-SENTENCE STATEMENTS - At least 2+ sentences are likely news/factual
+    elif len(text.split('.')) >= 2 and len(text.split()) >= 15:
+        result = ('analysis', 0.8)
+        print(f"📃 Multi-sentence statement: This looks like text content, I will analyze it.")
+    
+    # NOW check for conversational patterns (AFTER analysis checks)
     elif COMPILED_PATTERNS['greeting'].match(text_lower):
         result = ('conversation', 0.95)
         print(f"👋 Greeting detected: This seems to be a general question, let's chat.")
@@ -471,7 +569,7 @@ def classify_user_intent_fast(text: str) -> Tuple[str, float]:
         result = ('conversation', 0.85)
         print(f"💬 General question: This seems to be a general question, let's chat.")
     
-    # Recognize more conversational patterns
+    # Recognize conversational patterns
     elif any(phrase in text_lower for phrase in ['tell me about', 'what do you think', 'i think', 'i believe', 'my opinion', 'in my view', 'personally']):
         result = ('conversation', 0.8)
         print(f"💬 Opinion/Discussion: This seems to be a general question, let's chat.")
@@ -484,31 +582,10 @@ def classify_user_intent_fast(text: str) -> Tuple[str, float]:
         result = ('conversation', 0.8)
         print(f"❓ Question: This seems to be a general question, let's chat.")
     
-    # Catch casual statements and responses
+    # Catch casual statements (only if short and no analysis indicators)
     elif len(text.split()) < 10 and not any(word in text_lower for word in ['breaking', 'news', 'report', 'according', 'sources', 'claims', 'study']):
         result = ('conversation', 0.7)
         print(f"💬 Casual statement: This seems to be a general question, let's chat.")
-    
-    # Category 1: Text Analysis Detection
-    elif COMPILED_PATTERNS['verification'].search(text_lower):
-        result = ('analysis', 0.95)
-        print(f"🔍 Verification request: This looks like text content, I will analyze it.")
-    
-    elif any(phrase in text_lower for phrase in ['is this true', 'fact check', 'verify this', 'real or fake', 'check this', 'analyze this']):
-        result = ('analysis', 0.9)
-        print(f"📊 Analysis request: This looks like text content, I will analyze it.")
-    
-    elif COMPILED_PATTERNS['news'].search(text_lower):
-        result = ('analysis', 0.85)
-        print(f"📰 News content: This looks like text content, I will analyze it.")
-    
-    elif len(text.split()) > 30:  # Long text likely needs analysis
-        result = ('analysis', 0.8)
-        print(f"📄 Long text: This looks like text content, I will analyze it.")
-    
-    elif any(word in text_lower for word in ['breaking', 'report', 'according to', 'sources say', 'claims', 'study shows', 'research']):
-        result = ('analysis', 0.75)
-        print(f"📋 News/Research content: This looks like text content, I will analyze it.")
     
     # Default to conversation for unclear inputs
     else:

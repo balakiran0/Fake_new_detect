@@ -5,6 +5,24 @@
 
 {% block extra_css %}
 /* Chat-specific styles */
+.chat-container { display: flex; flex-direction: column; height: 100%; }
+.chat-messages { flex: 1; overflow-y: auto; padding: 1rem; }
+.message { display: flex; gap: 12px; margin: 14px 0; align-items: flex-start; }
+.message.assistant { flex-direction: row; }
+.message.user { flex-direction: row-reverse; }
+.message-avatar {
+    width: 40px; height: 40px; min-width: 40px;
+    border: 2px solid #2ecc71; color: #2ecc71;
+    border-radius: 50%; display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: 0.95rem; background: transparent;
+}
+.message-body { max-width: 75%; }
+.message-username { font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 6px; text-align: left; }
+.message.user .message-username { text-align: right; }
+.message-content {
+    border: 2px solid #2ecc71; border-radius: 8px; padding: 10px 12px;
+    background: transparent; color: var(--text-primary);
+}
 .typing-indicator {
     display: flex;
     align-items: center;
@@ -178,8 +196,10 @@
         <div id="messagesList">
             <!-- Welcome message -->
             <div class="message assistant">
-                <div class="message-avatar">AI</div>
-                <div class="message-content">
+                <div class="message-avatar">FD</div>
+                <div class="message-body">
+                    <div class="message-username">AI Assistant</div>
+                    <div class="message-content">
                     <strong>👋 Welcome to the Enhanced Fake News Detector!</strong><br><br>
                     I can help you verify information using our advanced 8-step verification pipeline. You can:<br>
                     • <strong>Chat with me</strong> about any topic<br>
@@ -187,6 +207,7 @@
                     • <strong>Upload files</strong> (PDF, images, videos)<br>
                     • <strong>Check URLs</strong> for credibility<br><br>
                     What would you like to verify today?
+                    </div>
                 </div>
             </div>
         </div>
@@ -336,20 +357,30 @@ function addMessage(content, isUser = false, isTyping = false) {
     
     if (isTyping) {
         messageDiv.innerHTML = `
-            <div class="message-avatar">AI</div>
-            <div class="message-content typing-indicator">
-                <div class="typing-dots">
-                    <span></span><span></span><span></span>
+            <div class="message-avatar">FD</div>
+            <div class="message-body">
+                <div class="message-username">AI Assistant</div>
+                <div class="message-content typing-indicator">
+                    <div class="typing-dots">
+                        <span></span><span></span><span></span>
+                    </div>
+                    Thinking...
                 </div>
-                Thinking...
             </div>
         `;
         messageDiv.id = 'typing-message';
     } else {
         const renderedContent = isUser ? content : renderMarkdown(content);
+        const userName = window.currentUserName || 'You';
+        const userInitials = (userName.match(/\b\w/g) || []).slice(0,2).join('').toUpperCase() || 'U';
+        const avatarText = isUser ? userInitials : 'FD';
+        const nameLabel = isUser ? userName : 'AI Assistant';
         messageDiv.innerHTML = `
-            <div class="message-avatar">${isUser ? 'You' : 'AI'}</div>
-            <div class="message-content">${renderedContent}</div>
+            <div class="message-avatar">${avatarText}</div>
+            <div class="message-body">
+                <div class="message-username">${nameLabel}</div>
+                <div class="message-content">${renderedContent}</div>
+            </div>
         `;
     }
     

@@ -11,7 +11,6 @@ from .ai_model import (
     detect_fake_news,
     generate_community_notes,
     classify_user_intent_fast,
-    generate_conversational_response_fast,
     classify_content_type_fast,
     analyze_content_structure_fast,
     HF_AVAILABLE,
@@ -20,17 +19,41 @@ from .ai_model import (
     OPENAI_AVAILABLE,
     OPENAI_API_KEY
 )
+from .ai_model_enhanced import IntelligentConversationEngine
 from .enhanced_verification import verify_with_enhanced_pipeline
 import base64
 from io import BytesIO
-from PIL import Image
-import pytesseract
-from pypdf import PdfReader
+try:
+    from PIL import Image  # optional
+except Exception:
+    Image = None
+try:
+    import pytesseract  # optional
+except Exception:
+    pytesseract = None
+try:
+    from pypdf import PdfReader  # optional
+except Exception:
+    PdfReader = None
 import re
 import requests
 from bs4 import BeautifulSoup
 import tempfile
 import os
+
+# Initialize the enhanced conversation engine once at module load
+_conversation_engine = None
+
+def get_conversation_engine():
+    """Lazily initialize the conversation engine"""
+    global _conversation_engine
+    if _conversation_engine is None:
+        try:
+            _conversation_engine = IntelligentConversationEngine()
+        except Exception as e:
+            print(f"Warning: Failed to initialize IntelligentConversationEngine: {e}")
+            _conversation_engine = False  # Mark as failed
+    return _conversation_engine if _conversation_engine is not False else None
 
 
 @method_decorator(csrf_exempt, name='dispatch')
@@ -50,9 +73,19 @@ class FakeNewsDetectorAPIView(APIView):
         
         # If it's conversational and no files uploaded, respond conversationally
         if intent == 'conversation' and len(files) == 0 and intent_confidence > 0.6:
-            # Try to get conversation history from request (if implemented)
+            # Try to get conversation history from request
             conversation_history = request.data.get('conversation_history', [])
-            conversational_response = generate_conversational_response_fast(input_data, conversation_history)
+            
+            # Use enhanced conversation engine if available
+            engine = get_conversation_engine()
+            if engine:
+                try:
+                    conversational_response = engine.understand_and_respond(input_data, conversation_history)
+                except Exception as e:
+                    print(f"Enhanced engine error: {e}, falling back to basic response")
+                    conversational_response = f"I understand: {input_data[:100]}... Let me help with that!"
+            else:
+                conversational_response = f"I understand: {input_data[:100]}... Let me help with that!"
             
             # Calculate response time
             response_time = round(time.time() - start_time, 2)
@@ -115,12 +148,26 @@ class FakeNewsDetectorAPIView(APIView):
                     filenames.append(f.get('filename'))
 
                 if file_type == 'application/pdf':
-                    reader = PdfReader(BytesIO(file_bytes))
-                    for page in reader.pages:
-                        extracted_text += page.extract_text() + "\n"
+                    if PdfReader is None:
+                        extracted_text += f"\n[PDF support not available: pypdf not installed]"
+                    else:
+                        reader = PdfReader(BytesIO(file_bytes))
+                        for page in reader.pages:
+                            extracted_text += (page.extract_text() or "") + "\n"
                 elif file_type.startswith('image/'):
-                    image = Image.open(BytesIO(file_bytes))
-                    extracted_text += pytesseract.image_to_string(image) + "\n"
+                    if Image is None or pytesseract is None:
+                        missing = []
+                        if Image is None:
+                            missing.append("Pillow")
+                        if pytesseract is None:
+                            missing.append("pytesseract")
+                        extracted_text += f"\n[Image OCR not available: missing {' & '.join(missing)}]"
+                    else:
+                        image = Image.open(BytesIO(file_bytes))
+                        try:
+                            extracted_text += (pytesseract.image_to_string(image) or "") + "\n"
+                        except Exception as e:
+                            extracted_text += f"\n[Error running OCR: {str(e)}]"
                 elif file_type.startswith('video/'):
                     # Transcribe audio track using Whisper (tiny model for speed)
                     try:
@@ -174,14 +221,31 @@ class FakeNewsDetectorAPIView(APIView):
         use_enhanced = len(full_text.split()) > 50 or content_type == 'news article'
         
         if use_enhanced:
-            # Use enhanced 8-step verification pipeline
-            enhanced_result = verify_with_enhanced_pipeline(full_text, use_openai=OPENAI_AVAILABLE)
+            # Determine if we can use fast-track mode (heuristics only, no API calls)
+            # Fast mode: <500 words OR no file uploads (simple paste)
+            use_fast_mode = (len(full_text.split()) < 500 and len(files) == 0) or 'fast_mode' in request.data
+            
+            # Use enhanced 8-step verification pipeline with timeout protection
+            try:
+                enhanced_result = verify_with_enhanced_pipeline(
+                    full_text, 
+                    use_openai=OPENAI_AVAILABLE and not use_fast_mode,
+                    fast_mode=use_fast_mode
+                )
+            except Exception as e:
+                # Fallback to fast mode if something goes wrong
+                print(f"Enhanced verification error, falling back to fast mode: {e}")
+                enhanced_result = verify_with_enhanced_pipeline(
+                    full_text, 
+                    use_openai=False,
+                    fast_mode=True
+                )
             
             verdict = enhanced_result['verdict']
             confidence_level = enhanced_result['confidence']
             
             # Convert confidence level to score
-            confidence_map = {'HIGH': 0.9, 'MEDIUM': 0.7, 'LOW': 0.5}
+            confidence_map = {'HIGH': 0.9, 'MEDIUM': 0.7, 'LOW': 0.5, 'ERROR': 0.3}
             confidence_score = confidence_map.get(confidence_level, 0.5)
             
             # Format enhanced response
@@ -231,6 +295,17 @@ class FakeNewsDetectorAPIView(APIView):
         # Calculate total response time
         total_response_time = round(time.time() - start_time, 2)
         
+        # Prepare extracted content info
+        extracted_content_info = {
+            "source_type": "url" if origin_url else ("file" if filenames else "text"),
+            "page_title": page_title if origin_url else None,
+            "url": origin_url,
+            "files": filenames,
+            "extracted_text": full_text[:1000] + "..." if len(full_text) > 1000 else full_text,  # First 1000 chars
+            "total_length": len(full_text),
+            "word_count": len(full_text.split())
+        }
+        
         # Prepare response with enhanced data if available
         response_data = {
             "intent": "analysis",
@@ -247,6 +322,7 @@ class FakeNewsDetectorAPIView(APIView):
                 "analysis_summary": f"Detected as {content_type.replace('_', ' ').title()} with {int(type_confidence*100)}% confidence"
             },
             "origin": {"url": origin_url, "files": filenames},
+            "extracted_content": extracted_content_info,
             "id": result_obj.id,
             "processing_time": f"{total_response_time}s (optimized)",
             "verification_method": "enhanced" if use_enhanced else "standard"
@@ -254,6 +330,8 @@ class FakeNewsDetectorAPIView(APIView):
         
         # Add enhanced verification data if available
         if use_enhanced and 'enhanced_result' in locals():
+            response_data["truth_percentage"] = enhanced_result.get('truth_percentage', 50)
+            response_data["detailed_report"] = enhanced_result.get('detailed_report', {})
             response_data["enhanced_verification"] = {
                 "core_claim": enhanced_result.get('core_claim', ''),
                 "entities": enhanced_result.get('entities', {}),
@@ -262,6 +340,10 @@ class FakeNewsDetectorAPIView(APIView):
                 "confidence_level": enhanced_result.get('confidence', 'LOW'),
                 "cached": enhanced_result.get('cached', False)
             }
+        else:
+            # For standard verification, calculate basic truth percentage
+            truth_pct = int(confidence_score * 100) if verdict == 'Real' else int((1 - confidence_score) * 100)
+            response_data["truth_percentage"] = truth_pct
         
         return Response(response_data)
 

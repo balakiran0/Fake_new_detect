@@ -162,7 +162,18 @@ class UserPreferences(models.Model):
     theme = models.CharField(max_length=20, default='dark', choices=[
         ('light', 'Light'),
         ('dark', 'Dark'),
-        ('auto', 'Auto'),
+        ('system', 'System'),
+    ])
+    accent_color = models.CharField(max_length=20, default='pink', choices=[
+        ('pink', 'Pink'),
+        ('blue', 'Blue'),
+        ('green', 'Green'),
+        ('purple', 'Purple'),
+    ])
+    language = models.CharField(max_length=20, default='en-US', choices=[
+        ('en-US', 'English (US)'),
+        ('en-GB', 'English (UK)'),
+        ('es-ES', 'Spanish'),
     ])
     auto_save_conversations = models.BooleanField(default=True)
     show_timestamps = models.BooleanField(default=True)

@@ -1,0 +1,1285 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Fake News Detector — Inside UI{% endblock %}
+
+{% block body_class %}layout-default{% endblock %}
+
+{% block extra_css %}
+/* Premium Blue theme (corrected spec) */
+:root {
+/* Deep background colors */
+--bg-navy: #0A2A43; /* deep navy */
+--bg-royal: #0E3A60; /* royal */
+--bg-accent: #1666A8; /* premium blue accent */
+--btn-royal: #0F74F2; /* strong royal for buttons */
+--btn-teal: #00C2C7; /* teal accent */
+/* Glass surfaces */
+--panel: rgba(255,255,255,0.12); /* main content frosted */
+--panel-strong: rgba(255,255,255,0.18); /* sidebar slightly stronger */
+--panel-border: rgba(255,255,255,0.32);
+--panel-border-soft: rgba(255,255,255,0.22);
+--shadow-1: 0 12px 30px rgba(7, 28, 48, 0.28);
+--shadow-2: 0 18px 44px rgba(7, 28, 48, 0.36);
+}
+
+.main-wrap {
+height: 100vh;
+display: grid;
+grid-template-columns: 320px 1fr;
+gap: 20px;
+padding: 22px;
+background:
+radial-gradient(1200px 800px at 0% 0%, rgba(15, 116, 242, 0.22), transparent 58%),
+radial-gradient(1200px 800px at 100% 100%, rgba(0, 194, 199, 0.18), transparent 58%),
+linear-gradient(135deg, var(--bg-navy) 0%, var(--bg-royal) 45%, var(--bg-accent) 100%);
+overflow: hidden; /* prevent page scroll, use internal panels */
+}
+
+.card {
+background: linear-gradient(180deg, var(--panel), rgba(255,255,255,0.10));
+border: 1.5px solid var(--panel-border);
+border-radius: 18px;
+box-shadow: var(--shadow-1);
+backdrop-filter: blur(10px);
+}
+
+/* Sidebar gets slightly stronger frosted surface */
+.card.sidebar-inner { background: linear-gradient(180deg, var(--panel-strong), rgba(255,255,255,0.10)); border-color:
+var(--panel-border-soft); }
+
+/* Left inner sidebar */
+.sidebar-inner {
+display: flex;
+flex-direction: column;
+padding: 16px;
+min-height: 0; /* allow internal sections to scroll */
+}
+.new-btn {
+display: inline-flex; align-items: center; gap: 8px;
+background: linear-gradient(135deg, var(--btn-teal), var(--btn-royal));
+color: #053b5e; font-weight: 800; border: none;
+padding: 12px 14px; border-radius: 14px; cursor: pointer;
+box-shadow: 0 8px 20px rgba(34, 211, 238, 0.25);
+transition: transform .2s ease, box-shadow .3s ease;
+}
+.new-btn:hover { transform: translateY(-2px); box-shadow: var(--shadow-2); }
+.new-btn i { color: #053b5e; }
+
+.history {
+margin-top: 16px; flex: 1; overflow: auto; padding-right: 6px;
+}
+.history-item { color: #e8f6ff; opacity: 0.95; padding: 10px 8px; border-radius: 10px; cursor: pointer; }
+.history-item:hover, .history-item.active { background: rgba(255,255,255,0.12); }
+/* History heading */
+.side-heading { margin-top: 14px; color: #e8f6ff; opacity: 0.85; font-weight: 800; letter-spacing: .3px; }
+
+.history-item { display:flex; align-items:center; justify-content: space-between; gap:8px; }
+.item-title { flex:1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.item-actions { display:flex; align-items:center; }
+.dot-btn { width:28px; height:28px; display:grid; place-items:center; color:#e8f6ff; background: rgba(255,255,255,0.10);
+border:1px solid rgba(255,255,255,0.18); border-radius:8px; }
+.dot-btn:hover { background: rgba(255,255,255,0.16); }
+.menu-pop { position:absolute; z-index:30; min-width: 180px; right: 8px; margin-top: 6px; background: rgba(19, 22, 35,
+0.95); color:#e5e7eb; border:1px solid rgba(255,255,255,0.10); border-radius:12px; box-shadow: 0 16px 40px
+rgba(0,0,0,0.35); backdrop-filter: blur(6px); display:none; }
+.menu-item-row { display:flex; align-items:center; gap:10px; padding:10px 12px; cursor:pointer; }
+.menu-item-row:hover { background: rgba(255,255,255,0.08); }
+.menu-sep-lite { height:1px; background: rgba(255,255,255,0.10); margin:4px 8px; border-radius:1px; }
+.danger { color:#ff8aa6; }
+
+.sidebar-bottom {
+display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding-top: 10px;
+}
+.side-icon {
+display: flex; gap: 8px; align-items: center; justify-content: center; color: #e8f6ff;
+background: rgba(255,255,255,0.10); border: 1px solid var(--border); border-radius: 12px; padding: 10px 0;
+text-decoration: none; transition: transform .2s ease, box-shadow .3s ease;
+}
+.side-icon:hover { transform: translateY(-1px); box-shadow: var(--shadow-1); }
+/* Sidebar Settings/Resources visible under History */
+
+/* Right content */
+.content {
+padding: 18px; position: relative;
+min-height: 0; /* allow children to shrink */
+}
+.content .header {
+display: flex; justify-content: space-between; align-items: center;
+}
+.avatar {
+width: 42px; height: 42px; border-radius: 50%; background: rgba(255,255,255,0.8);
+display: grid; place-items: center; color: #0ea5e9; font-weight: 800;
+}
+.title {
+font-size: clamp(28px, 5vw, 46px);
+font-weight: 900; color: #f3f8ff; margin-top: 6px; letter-spacing: .3px;
+text-shadow: 0 6px 18px rgba(10, 54, 117, .35);
+}
+.subtitle { color: rgba(255,255,255,0.95); max-width: 46ch; }
+.hr-lite { height: 3px; width: 120px; border-radius: 3px; background: rgba(255,255,255,0.6); margin: 12px 0 18px; }
+
+.metrics.card { padding: 16px; }
+.metrics-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+.metric-heading { display:flex; justify-content: space-between; color: #d9f2ff; font-weight: 700; margin-bottom: 6px; }
+.metric-big { font-size: 36px; font-weight: 800; color: #baf0ff; }
+.metric-row { display:flex; justify-content: space-between; color: #d9f2ff; padding-top: 6px; margin-top: 6px; }
+.metric-warn { color: #ff8aa6; font-weight: 700; }
+
+.chat-area { flex: 1; overflow-y: auto; margin-top: 12px; padding-right: 6px; padding-bottom: 0; overscroll-behavior:
+contain; display:flex; flex-direction: column; min-height: 0; }
+#chatMessages { display: flex; flex-direction: column; justify-content: flex-start; align-items: stretch; margin: 0;
+padding: 0; }
+#chatMessages > .msg:first-child { margin-top: 0; }
+#chatMessages > .msg:last-child { margin-bottom: 0; }
+.msg { display: flex; gap: 10px; margin: 8px 0; align-items: flex-start; }
+.msg.user { justify-content: flex-end; }
+.msg .avatar { width: 36px; height: 36px; border-radius: 50%; background: rgba(255,255,255,0.9); color:#0ea5e9;
+font-weight: 800; display:grid; place-items:center; }
+.msg .bubble { max-width: 70%; padding: 10px 12px; border-radius: 12px; border: 1.5px solid rgba(239,246,255,0.55);
+color:#f0f7ff; background: rgba(255,255,255,0.10); backdrop-filter: blur(8px); }
+.msg.user .bubble { background: rgba(34,211,238,0.15); border-color: rgba(96,165,250,0.55); }
+.msg .name { font-size: 12px; color: #cfe9ff; margin-bottom: 4px; }
+.typing { display:flex; gap:6px; align-items:center; }
+.typing .dot { width:6px; height:6px; border-radius:50%; background:#cfe9ff; opacity:.6; animation: t 1.2s infinite
+ease-in-out; }
+.typing .dot:nth-child(2){ animation-delay: .2s }
+.typing .dot:nth-child(3){ animation-delay: .4s }
+@keyframes t { 0%,80%,100%{ transform:scale(0.6); opacity:.4 } 40%{ transform:scale(1); opacity:1 } }
+
+.input-wrap { display:flex; align-items: center; gap: 10px; margin-top: 16px; }
+.input-field {
+flex: 1; display:flex; gap:10px; align-items:center; color:#eaf6ff;
+background: rgba(255,255,255,0.10); border: 1.5px solid rgba(239, 246, 255, 0.55);
+border-radius: 14px; padding: 12px 14px; box-shadow: inset 0 0 0 1px rgba(255,255,255,0.06);
+}
+.input-field input {
+background: transparent; border: none; outline: none; color: #fff; width: 100%;
+}
+.input-field:focus-within {
+border-color: rgba(15, 116, 242, 0.9);
+box-shadow: 0 0 0 6px rgba(15, 116, 242, 0.18), inset 0 0 0 1px rgba(255,255,255,0.10);
+}
+.analyze-btn {
+background: linear-gradient(135deg, var(--btn-royal), #0856c8);
+color: #eef7ff; font-weight: 900; letter-spacing: .2px;
+border: none; border-radius: 12px; padding: 12px 18px; min-width: 140px;
+box-shadow: 0 10px 26px rgba(31, 122, 230, 0.35), inset 0 1px 0 rgba(255,255,255,0.25);
+transition: transform .2s ease, box-shadow .3s ease;
+}
+.analyze-btn:hover { transform: translateY(-2px); box-shadow: 0 14px 36px rgba(31, 122, 230, 0.45), inset 0 1px 0
+rgba(255,255,255,0.35); }
+.analyze-btn:active { transform: translateY(0); box-shadow: 0 6px 18px rgba(31, 122, 230, 0.35); }
+
+/* Actions below analyze input */
+.actions-below { display: flex; gap: 12px; margin-top: 12px; }
+.below-btn {
+display: inline-flex; align-items: center; gap: 8px;
+color: #e8f6ff; background: rgba(255,255,255,0.10);
+border: 1px solid rgba(255,255,255,0.25); border-radius: 12px;
+padding: 10px 14px; cursor: pointer;
+}
+
+/* Profile widget (right-top) */
+.profile { display: flex; align-items: center; gap: 10px; }
+.profile-name { color: #e8f6ff; font-weight: 700; }
+.profile-avatar { width: 42px; height: 42px; border-radius: 50%; overflow: hidden; border: 2px solid
+rgba(255,255,255,0.35); box-shadow: 0 4px 14px rgba(0,0,0,0.2); }
+.profile-avatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.avatar-fallback { width: 42px; height: 42px; border-radius: 50%; display: grid; place-items: center; background:
+rgba(255,255,255,0.85); color: #4f46e5; font-weight: 800; }
+
+/* Profile dropdown */
+.profile-wrap { position: relative; }
+.profile-menu {
+position: absolute; right: 0; top: 52px; z-index: 20; min-width: 210px;
+background: rgba(19, 22, 35, 0.95); color: #e5e7eb; border: 1px solid rgba(255,255,255,0.08);
+border-radius: 14px; box-shadow: 0 16px 40px rgba(0,0,0,0.35); backdrop-filter: blur(6px);
+padding: 8px; display: none;
+}
+.profile-menu.show { display: block; }
+.menu-item { display: flex; align-items: center; gap: 10px; padding: 10px 10px; border-radius: 10px; cursor: pointer;
+text-decoration: none; color: inherit; }
+.menu-item:hover { background: rgba(255,255,255,0.08); }
+.menu-sep { height: 1px; background: rgba(255,255,255,0.08); margin: 6px 4px; border-radius: 1px; }
+
+/* Profile modal styles */
+.profile-card { display:grid; gap:12px; color:#e8f6ff; }
+.profile-row { display:flex; gap:10px; align-items:center; }
+.profile-label { width: 200px; opacity:.85; }
+.activity-grid { display:grid; grid-template-columns: repeat(30, 12px); gap:3px; padding:10px; background:
+rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.15); border-radius:10px; }
+.activity-cell { width:12px; height:12px; border-radius:2px; background: rgba(255,255,255,0.10); }
+.legend { display:flex; align-items:center; gap:6px; opacity:.8; font-size:12px; }
+.legend .activity-cell { background:#1f2937; }
+
+/* Profile hero (GitHub-like) */
+.profile-hero { display:flex; align-items:center; gap:16px; padding:8px 0 14px; border-bottom:1px solid
+rgba(255,255,255,0.12); margin-bottom:12px; }
+.hero-avatar { width: 96px; height: 96px; border-radius: 50%; overflow:hidden; border: 3px solid rgba(255,255,255,0.35);
+box-shadow: 0 10px 30px rgba(0,0,0,0.35); }
+.hero-avatar img { width:100%; height:100%; object-fit: cover; display:block; }
+.hero-fallback { width: 96px; height: 96px; border-radius: 50%; display:grid; place-items:center; background:
+rgba(255,255,255,0.9); color:#4f46e5; font-weight:900; font-size:36px; border: 3px solid rgba(255,255,255,0.35); }
+.hero-text { display:flex; flex-direction:column; gap:4px; }
+.hero-name { font-size:22px; font-weight:800; color:#e8f6ff; }
+.hero-username { color:#cfe9ff; opacity:.9; }
+
+/* Modal styles */
+.modal-backdrop { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(10, 20, 30, 0.7);
+z-index: 100; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(8px); }
+
+.modal-content.card {
+background: #2A2A2E; /* Dark background from screenshot */
+border: 1px solid #4D4D4D;
+border-radius: 16px;
+color: #EAEAEB;
+box-shadow: 0 16px 40px rgba(0,0,0,0.35);
+}
+
+.modal-header h3 {
+font-size: 20px;
+font-weight: 800;
+}
+
+#modalBody .profile-card {
+gap: 16px;
+}
+
+#modalBody .profile-row {
+font-size: 16px;
+font-weight: 500;
+justify-content: center; /* Center buttons */
+text-align: center;
+}
+
+#modalBody .btn-secondary {
+background: #4D4D4D;
+border: none;
+font-weight: 700;
+padding: 8px 16px;
+border-radius: 8px;
+}
+
+#modalBody .btn-danger {
+background: #E53935; /* Red from screenshot */
+border: none;
+font-weight: 700;
+padding: 8px 16px;
+border-radius: 8px;
+}
+.modal-header { display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; border-bottom:
+1px solid rgba(255,255,255,0.15); }
+.modal-header h3 { margin: 0; font-weight: 700; }
+.modal-close { background: none; border: none; color: #fff; font-size: 20px; cursor: pointer; opacity: 0.8; }
+#modalBody { padding: 16px; }
+
+/* Activity section with year selector */
+.activity-section { display:block; }
+.activity-header { display:flex; align-items:center; justify-content: space-between; gap: 10px; margin:6px 0 8px; }
+.activity-year { display:grid; grid-template-columns: repeat(12, minmax(60px, 1fr)); gap: 14px; }
+.month { display:flex; flex-direction:column; align-items:center; gap:6px; }
+.month-grid { display:grid; grid-template-columns: repeat(7, 10px); grid-auto-rows: 10px; gap: 3px; }
+.month-label { color:#cfe9ff; font-size: 12px; opacity:.9; }
+.cell { width:10px; height:10px; border-radius: 2px; background:#3a3f63; }
+.lvl-1 { background:#14532d; }
+.lvl-2 { background:#166534; }
+.lvl-3 { background:#16a34a; }
+.lvl-4 { background:#22c55e; }
+
+.year-select { padding: 6px 10px; border-radius: 10px; border:1px solid rgba(255,255,255,0.25); background:
+rgba(255,255,255,0.08); color:#e8f6ff; }
+
+/* Sidebar buttons and New Conversation */
+.side-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 12px; }
+.side-btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; color:#e8f6ff; background:
+rgba(255,255,255,0.10); border: 1px solid rgba(255,255,255,0.25); border-radius:12px; padding:10px 12px; cursor:pointer;
+width:100%; }
+.new-conv-btn { margin-top: 14px; width: 100%; text-align: left; color:#e8f6ff; font-weight:700; background:
+rgba(255,255,255,0.12); border: 1px solid var(--border); border-radius: 12px; padding: 12px 14px; }
+
+@media (max-width: 900px) {
+.main-wrap { grid-template-columns: 1fr; }
+}
+{% endblock %}
+
+{% block content %}
+<div class="main-wrap">
+  <!-- Left inner sidebar -->
+  <aside class="card sidebar-inner">
+    <button id="btnNewFact" class="new-btn"><i class="fas fa-plus"></i> New Fact Check</button>
+    <div class="side-heading">History</div>
+
+    <div id="history" class="history">
+      <!-- Filled by JS from conversation list -->
+    </div>
+
+    <!-- Sidebar actions placed at bottom -->
+    <div class="side-actions" style="margin-top: 12px;">
+      <button id="btnSettings" class="side-btn"><i class="fas fa-sliders-h"></i> Settings</button>
+      <button id="btnResources" class="side-btn"><i class="far fa-bookmark"></i> Resources</button>
+    </div>
+  </aside>
+
+  <!-- Right content -->
+  <section class="card content" style="display:flex; flex-direction:column; min-height: calc(100vh - 36px);">
+    <div class="header" style="display:flex; align-items:center; justify-content:space-between; gap: 12px;">
+      <h1 class="title" style="margin: 0;">Fake News Detector</h1>
+      <div class="profile profile-wrap" id="profileWrap">
+        {% if request.user.is_authenticated %}
+        <div class="profile-name">{{ request.user.username }}</div>
+        <div class="profile-avatar">
+          {% with sa=request.user.socialaccount_set.first %}
+          {% if sa and sa.extra_data.picture %}
+          <img src="{{ sa.extra_data.picture }}" alt="Profile" />
+          {% else %}
+          <div class="avatar-fallback">{{ request.user.username|first|upper }}</div>
+          {% endif %}
+          {% endwith %}
+        </div>
+        {% else %}
+        <div class="avatar-fallback">?</div>
+        {% endif %}
+
+        <!-- Dropdown menu (no Settings item) -->
+        <div class="profile-menu" id="profileMenu">
+          <a class="menu-item" href="#" id="menuProfile"><i class="fas fa-user-circle"></i><span>Profile Info</span></a>
+          <a class="menu-item" href="#" id="menuFiles"><i class="fas fa-folder"></i><span>Files</span></a>
+          <a class="menu-item" href="#" id="menuFeedback"><i class="fas fa-comment-dots"></i><span>Give
+              Feedback</span></a>
+          <a class="menu-item" href="#" id="menuHelp"><i class="fas fa-question-circle"></i><span>Help</span></a>
+          <div class="menu-sep"></div>
+          <a class="menu-item" href="#" id="menuAbout"><i class="fas fa-info-circle"></i><span>About</span></a>
+          <a class="menu-item" href="{% url 'dashboard:logout' %}"><i class="fas fa-sign-out-alt"></i><span>Sign
+              Out</span></a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Inline Chat Area -->
+    <div id="chatArea" class="chat-area">
+      <div id="chatMessages">
+        <div class="msg">
+          <div class="avatar">FD</div>
+          <div class="bubble">
+            <div class="name">AI Assistant</div>
+            <div>👋 Welcome! Paste text or a link to analyze, or just say hello.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- Analyze Input (fixed at bottom of panel) -->
+    <div class="input-wrap">
+      <div class="input-field"><i class="fas fa-paperclip"></i><input id="textInput"
+          placeholder="Paste article or link here..." /></div>
+      <button id="btnAnalyze" class="analyze-btn">Analyze</button>
+    </div>
+  </section>
+</div>
+
+<!-- Modals -->
+<div id="modalBackdrop" class="modal-backdrop" style="display:none;">
+  <div class="modal-content card">
+    <div class="modal-header">
+      <h3 id="modalTitle">Modal</h3>
+      <button class="modal-close" onclick="closeModal()"><i class="fas fa-times"></i></button>
+    </div>
+    <div id="modalBody"></div>
+  </div>
+</div>
+
+<!-- User meta for profile modal -->
+<div id="userMeta" data-username="{{ request.user.username|default:'' }}"
+  data-fullname="{{ request.user.get_full_name|default:request.user.username }}"
+  data-gender="{{ request.user.profile.gender|default:'Not set' }}"
+  data-datejoined="{{ request.user.date_joined|date:'M d, Y H:i' }}"
+  data-photo="{% with sa=request.user.socialaccount_set.first %}{% if sa and sa.extra_data.picture %}{{ sa.extra_data.picture }}{% endif %}{% endwith %}"
+  style="display:none;"></div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  let currentConversationId = null;
+  let isSending = false;
+
+  async function fetchJSON(url, options = {}) {
+    const resp = await fetch(url, { credentials: 'same-origin', ...options });
+    if (!resp.ok) throw new Error('Request failed');
+    return resp.json();
+  }
+
+  async function saveMessage(role, content, messageType = 'text', metadata = {}) {
+    try {
+      const resp = await fetch('{% url "dashboard:save_message" %}', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': getCSRFToken()
+        },
+        body: JSON.stringify({
+          conversation_id: currentConversationId || 'new',
+          role: role,
+          content: content,
+          message_type: messageType,
+          metadata: metadata || {}
+        })
+      });
+      if (!resp.ok) throw new Error('Failed to save message');
+      const data = await resp.json();
+      if (data && data.success) {
+        if (!currentConversationId) currentConversationId = data.conversation_id;
+        return data;
+      }
+    } catch (e) {
+      console.warn('saveMessage error:', e);
+    }
+    return null;
+  }
+
+  // Inline chat helpers
+  function getUserDisplayName() {
+    const meta = document.getElementById('userMeta');
+    return (meta?.dataset.fullname || meta?.dataset.username || 'You').trim();
+  }
+
+  function getUserInitials(name) {
+    const m = (name.match(/\b\w/g) || []).slice(0, 2).join('').toUpperCase();
+    return m || 'U';
+  }
+
+  function renderMarkdown(text) {
+    return (text || '')
+      .replace(/\*\*(.*?)\*\*/g, '<strong>$1<\/strong>')
+      .replace(/\*(.*?)\*/g, '<em>$1<\/em>')
+      .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" style="color:#60a5fa; text-decoration:underline;">$1<\/a>')
+      .replace(/\n/g, '<br>');
+  }
+
+  function addMsg(content, isUser = false, isTyping = false) {
+    const wrap = document.getElementById('chatMessages');
+    const row = document.createElement('div');
+    row.className = 'msg' + (isUser ? ' user' : '');
+
+    const name = isUser ? getUserDisplayName() : 'AI Assistant';
+    const initials = isUser ? getUserInitials(name) : 'FD';
+
+    const avatar = document.createElement('div');
+    avatar.className = 'avatar';
+    avatar.textContent = initials;
+
+    const bubble = document.createElement('div');
+    bubble.className = 'bubble';
+
+    const nameEl = document.createElement('div');
+    nameEl.className = 'name';
+    nameEl.textContent = name;
+    bubble.appendChild(nameEl);
+
+    if (isTyping) {
+      row.classList.add('typing');
+      const typing = document.createElement('div');
+      typing.className = 'typing';
+      typing.innerHTML = '<span class="dot"></span><span class="dot"></span><span class="dot"></span>';
+      bubble.appendChild(typing);
+    } else {
+      const contentEl = document.createElement('div');
+      contentEl.innerHTML = isUser ? content : renderMarkdown(content);
+      bubble.appendChild(contentEl);
+    }
+
+    if (isUser) {
+      row.appendChild(bubble);
+      row.appendChild(avatar);
+    } else {
+      row.appendChild(avatar);
+      row.appendChild(bubble);
+    }
+
+    wrap.appendChild(row);
+    scrollToBottom();
+    return row;
+  }
+
+  function removeTyping(el) {
+    if (el && el.parentElement) el.remove();
+  }
+
+  function scrollToBottom() {
+    const area = document.getElementById('chatArea');
+    if (!area) return;
+    requestAnimationFrame(() => { area.scrollTop = area.scrollHeight; });
+  }
+
+  // Keep pinned to bottom when messages change
+  document.addEventListener('DOMContentLoaded', () => {
+    const target = document.getElementById('chatMessages');
+    if (target) {
+      const obs = new MutationObserver(() => scrollToBottom());
+      obs.observe(target, { childList: true });
+    }
+    scrollToBottom();
+  });
+
+  window.addEventListener('resize', scrollToBottom);
+
+  function copyToClipboard(text) {
+    try { navigator.clipboard.writeText(text); showToast('Link copied', 'info'); } catch (e) { }
+  }
+
+  function buildHistoryItem(c, makeActive) {
+    const row = document.createElement('div');
+    row.className = 'history-item' + (makeActive ? ' active' : '');
+    row.dataset.id = c.id;
+    const title = document.createElement('div');
+    title.className = 'item-title';
+    title.textContent = (c.title || 'Untitled Conversation');
+    title.onclick = () => openConversation(c.id, row);
+    const actions = document.createElement('div');
+    actions.className = 'item-actions';
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'dot-btn';
+    btn.innerHTML = '<i class="fas fa-ellipsis"></i>';
+    const menu = document.createElement('div');
+    menu.className = 'menu-pop';
+    menu.innerHTML = '<div class="menu-item-row" data-act="share"><i class="fas fa-share"></i><span>Share</span></div>' +
+      '<div class="menu-item-row" data-act="rename"><i class="fas fa-pen"></i><span>Rename</span></div>' +
+      '<div class="menu-sep-lite"></div>' +
+      '<div class="menu-item-row danger" data-act="delete"><i class="fas fa-trash"></i><span>Delete</span></div>';
+    btn.onclick = (e) => {
+      e.stopPropagation();
+      document.querySelectorAll('.menu-pop').forEach(m => m.style.display = 'none');
+      menu.style.display = 'block';
+    };
+    menu.addEventListener('click', async (e) => {
+      const item = e.target.closest('.menu-item-row');
+      if (!item) return;
+      const act = item.dataset.act;
+      menu.style.display = 'none';
+      if (act === 'share') {
+        const url = window.location.origin + '/#conversation/' + c.id;
+        copyToClipboard(url);
+      } else if (act === 'rename') {
+        promptRename(c.id, c.title || 'Untitled Conversation');
+      } else if (act === 'delete') {
+        confirmDelete(c.id, c.title || 'Untitled Conversation');
+      }
+    });
+    actions.appendChild(btn);
+    row.appendChild(title);
+    row.appendChild(actions);
+    row.appendChild(menu);
+    return row;
+  }
+
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest('.menu-pop') && !e.target.closest('.dot-btn')) {
+      document.querySelectorAll('.menu-pop').forEach(m => m.style.display = 'none');
+    }
+  });
+
+  async function apiRename(conversationId, title) {
+    const resp = await fetch('{% url "dashboard:rename_conversation" conversation_id="00000000-0000-0000-0000-000000000000" %}'.replace('00000000-0000-0000-0000-000000000000', conversationId), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCSRFToken() },
+      credentials: 'same-origin',
+      body: JSON.stringify({ title })
+    });
+    if (!resp.ok) throw new Error('rename failed');
+    return resp.json();
+  }
+
+  async function apiDelete(conversationId) {
+    const resp = await fetch('{% url "dashboard:delete_conversation" conversation_id="00000000-0000-0000-0000-000000000000" %}'.replace('00000000-0000-0000-0000-000000000000', conversationId), {
+      method: 'POST',
+      headers: { 'X-CSRFToken': getCSRFToken() },
+      credentials: 'same-origin'
+    });
+    if (!resp.ok) throw new Error('delete failed');
+    return resp.json();
+  }
+
+  function promptRename(conversationId, currentTitle) {
+    const html = '<div class="profile-card">'
+      + '<div class="profile-row"><div class="profile-label" style="width:auto;">New name</div><div style="flex:1"><input id="rnInput" class="form-control" value="' + (currentTitle.replace(/"/g, '&quot;')) + '"></div></div>'
+      + '<div class="profile-row" style="justify-content:flex-end; gap:10px;">'
+      + '<button id="rnCancel" class="btn btn-secondary">Cancel</button>'
+      + '<button id="rnSave" class="btn btn-primary-custom">Save</button>'
+      + '</div></div>';
+    showModal('custom', 'Rename chat', html);
+    const saveBtn = document.getElementById('rnSave');
+    const cancelBtn = document.getElementById('rnCancel');
+    const input = document.getElementById('rnInput');
+    saveBtn.onclick = async () => {
+      const t = (input.value || '').trim();
+      if (!t) return;
+      try { await apiRename(conversationId, t); await loadHistory(); closeModal(); showToast('Renamed', 'success'); } catch (e) { showToast('Rename failed', 'danger'); }
+    };
+    cancelBtn.onclick = () => closeModal();
+  }
+
+  function confirmDelete(conversationId, title) {
+    const html = '<div class="profile-card">'
+      + '<div class="profile-row" style="font-weight:700;">This will delete ' + renderMarkdown('**' + (title || '') + '**') + '</div>'
+      + '<div class="profile-row" style="justify-content:flex-end; gap:10px;">'
+      + '<button id="delCancel" class="btn btn-secondary">Cancel</button>'
+      + '<button id="delDo" class="btn btn-danger">Delete</button>'
+      + '</div></div>';
+    showModal('custom', 'Delete chat?', html);
+    document.getElementById('delCancel').onclick = () => closeModal();
+    document.getElementById('delDo').onclick = async () => {
+      try { await apiDelete(conversationId); if (currentConversationId === conversationId) { currentConversationId = null; const chat = document.getElementById('chatMessages'); if (chat) chat.innerHTML = ''; } await loadHistory(); closeModal(); showToast('Deleted', 'success'); } catch (e) { showToast('Delete failed', 'danger'); }
+    };
+  }
+
+  // Load history from existing endpoint
+  aSyncInit();
+  function aSyncInit() {
+    loadHistory();
+  }
+
+  async function loadHistory() {
+    try {
+      const data = await fetchJSON('{% url "dashboard:conversation_list" %}');
+      const wrap = document.getElementById('history');
+      wrap.innerHTML = '';
+      if (data.conversations && data.conversations.length) {
+        data.conversations
+          .filter(c => (c.title || '').trim().toLowerCase() !== 'new conversation')
+          .forEach((c, idx) => {
+            const el = buildHistoryItem(c, idx === 0);
+            wrap.appendChild(el);
+          });
+
+        // Enter to send (without leaving page)
+        document.getElementById('textInput').addEventListener('keydown', function (e) {
+          if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            document.getElementById('btnAnalyze').click();
+          }
+        });
+      } else {
+        wrap.innerHTML = '<div class="history-item" style="opacity:.7;">No history yet</div>';
+      }
+    } catch (e) {
+      showToast('Failed to load history', 'danger');
+    }
+  }
+
+  // Utilities: build a month-labeled heatmap by year
+  function renderYearHeatmap(year) {
+    const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    const blocks = months.map((label, mIndex) => {
+      const grid = renderMonthGrid(year, mIndex);
+      return `<div class="month"><div class="month-grid">${grid}</div><div class="month-label">${label}</div></div>`;
+    }).join('');
+    return blocks;
+  }
+
+  function renderMonthGrid(year, month) {
+    // Create a grid with EXACT days in month: leading padding + N days (no trailing filler)
+    const first = new Date(year, month, 1);
+    const last = new Date(year, month + 1, 0);
+    const startWeekday = first.getDay(); // 0 Sun - 6 Sat
+    const totalDays = last.getDate(); // 28/30/31
+    const cells = [];
+    // leading empty boxes for alignment
+    for (let i = 0; i < startWeekday; i++) cells.push('<div class="cell"></div>');
+    // exact day boxes
+    for (let dayNum = 1; dayNum <= totalDays; dayNum++) {
+      const val = (dayNum * (month + 3)) % 10; // placeholder intensity
+      let lvlClass = '';
+      if (val > 7) lvlClass = ' lvl-4'; else if (val > 5) lvlClass = ' lvl-3'; else if (val > 3) lvlClass = ' lvl-2'; else if (val > 1) lvlClass = ' lvl-1';
+      cells.push(`<div class="cell${lvlClass}"></div>`);
+    }
+    return cells.join('');
+  }
+
+  // Drag-to-scroll helper for the year chips
+  function enableDragScroll(el) {
+    let isDown = false, startX = 0, scrollLeft = 0;
+    el.addEventListener('mousedown', (e) => { isDown = true; el.classList.add('dragging'); startX = e.pageX - el.offsetLeft; scrollLeft = el.scrollLeft; });
+    document.addEventListener('mouseup', () => { isDown = false; el.classList.remove('dragging'); });
+    el.addEventListener('mouseleave', () => { isDown = false; el.classList.remove('dragging'); });
+    el.addEventListener('mousemove', (e) => { if (!isDown) return; e.preventDefault(); const x = e.pageX - el.offsetLeft; const walk = (x - startX) * 1; el.scrollLeft = scrollLeft - walk; });
+  }
+
+  async function openConversation(id, el) {
+    document.querySelectorAll('.history-item').forEach(i => i.classList.remove('active'));
+    if (el) el.classList.add('active');
+    currentConversationId = id;
+    try {
+      const data = await fetchJSON('{% url "dashboard:conversation_detail" conversation_id="00000000-0000-0000-0000-000000000000" %}'.replace('00000000-0000-0000-0000-000000000000', id));
+      // Render messages into chat panel
+      const wrap = document.getElementById('chatMessages');
+      wrap.innerHTML = '';
+      // Welcome message when no messages
+      if (!data.messages || !data.messages.length) {
+        const welcome = `👋 Welcome! Paste text or a link to analyze, or just say hello.`;
+        addMsg(welcome, false);
+      } else {
+        data.messages.forEach(m => {
+          const isUser = m.role === 'user';
+          // Assistant content may contain markdown
+          if (isUser) {
+            addMsg(m.content, true);
+          } else {
+            addMsg(m.content);
+          }
+        });
+        scrollToBottom();
+      }
+      showToast('Conversation opened', 'info');
+    } catch (e) {
+      showToast('Failed to open conversation', 'danger');
+    }
+  }
+
+  // New Fact Check
+  async function createNewFactCheck() {
+    try {
+      const data = await fetchJSON('{% url "dashboard:create_conversation" %}', {
+        method: 'POST',
+        headers: { 'X-CSRFToken': getCSRFToken() }
+      });
+      currentConversationId = data.conversation_id;
+      const chat = document.getElementById('chatMessages');
+      if (chat) chat.innerHTML = '';
+      await loadHistory();
+      const item = document.querySelector(`.history-item[data-id="${currentConversationId}"]`);
+      await openConversation(currentConversationId, item || null);
+      showToast('New fact check started', 'success');
+    } catch (e) {
+      showToast('Could not start new fact check', 'danger');
+    }
+  }
+
+  document.getElementById('btnNewFact').addEventListener('click', createNewFactCheck);
+
+  document.getElementById('btnAnalyze').addEventListener('click', async () => {
+    const txt = document.getElementById('textInput').value.trim();
+    if (!txt) { showToast('Please paste text or a link', 'warning'); return; }
+    if (txt.length < 3) { showToast('Please provide more content to analyze', 'warning'); return; }
+    if (isSending) return;
+    try {
+      isSending = true;
+      const btn = document.getElementById('btnAnalyze');
+      btn.disabled = true;
+      // Add user message inline
+      addMsg(txt, true);
+      await saveMessage('user', txt, 'text', {});
+      const typingEl = addMsg('', false, true);
+      const res = await fetch('/api/detect/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCSRFToken() },
+        credentials: 'same-origin',
+        body: JSON.stringify({ text: txt, files: [] })
+      });
+      const data = await res.json();
+      removeTyping(typingEl);
+      if (data.intent === 'conversation') {
+        addMsg(data.response || '');
+        await saveMessage('assistant', data.response || '', 'text', { conversation_mode: true });
+        showToast('Chat response', 'info');
+      } else {
+        // Build enhanced analysis message with visual percentage and View Report button
+        const analysisMsg = buildAnalysisMessage(data);
+        addMsg(analysisMsg);
+        await saveMessage('assistant', analysisMsg, 'analysis', { analysis_result: data });
+        showToast('Analysis complete', 'success');
+      }
+      // Clear input
+      const inputEl = document.getElementById('textInput');
+      inputEl.value = '';
+      scrollToBottom();
+      await loadHistory();
+    } catch (e) {
+      // Remove typing if present
+      document.querySelectorAll('#chatMessages .msg.typing').forEach(n => n.remove());
+      showToast('Analysis failed', 'danger');
+    }
+    finally {
+      isSending = false;
+      const btn = document.getElementById('btnAnalyze');
+      btn.disabled = false;
+    }
+  });
+
+  function buildAnalysisMessage(data) {
+    const verdict = data.verdict || 'Unknown';
+    const truthPct = data.truth_percentage || 50;
+    const confidence = data.confidence || 0.5;
+
+    // Determine verdict icon and color
+    let verdictIcon = '❓';
+    let verdictColor = '#94a3b8';
+    let barColor = '#94a3b8';
+
+    if (verdict.toLowerCase() === 'real') {
+      verdictIcon = '✅';
+      verdictColor = '#22c55e';
+      barColor = '#22c55e';
+    } else if (verdict.toLowerCase() === 'fake') {
+      verdictIcon = '❌';
+      verdictColor = '#ef4444';
+      barColor = '#ef4444';
+    } else if (verdict.toLowerCase() === 'mixed') {
+      verdictIcon = '⚠️';
+      verdictColor = '#f59e0b';
+      barColor = '#f59e0b';
+    }
+
+    // Get short explanation
+    const explanation = (data.notes && data.notes.summary) ? data.notes.summary.substring(0, 200) :
+      (data.explanation || 'Analysis complete.');
+
+    // Build HTML message
+    let html = `<div style="padding: 8px 0;">`;
+    html += `<div style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">`;
+    html += `<span style="font-size: 24px;">${verdictIcon}</span>`;
+    html += `<strong style="font-size: 18px; color: ${verdictColor};">${verdict}</strong>`;
+    html += `</div>`;
+
+    // Truth percentage bar
+    html += `<div style="margin: 12px 0;">`;
+    html += `<div style="display: flex; justify-content: space-between; margin-bottom: 4px;">`;
+    html += `<span style="font-size: 12px; opacity: 0.8;">Truth Score</span>`;
+    html += `<span style="font-size: 14px; font-weight: 700;">${truthPct}%</span>`;
+    html += `</div>`;
+    html += `<div style="width: 100%; height: 8px; background: rgba(255,255,255,0.15); border-radius: 4px; overflow: hidden;">`;
+    html += `<div style="width: ${truthPct}%; height: 100%; background: ${barColor}; transition: width 0.3s ease;"></div>`;
+    html += `</div>`;
+    html += `</div>`;
+
+    // Short explanation
+    html += `<p style="margin: 12px 0; font-size: 14px; opacity: 0.9;">${explanation}</p>`;
+
+    // View Report button
+    html += `<button onclick="showDetailedReport(${JSON.stringify(data).replace(/"/g, '&quot;')})" `;
+    html += `style="margin-top: 12px; padding: 8px 16px; background: linear-gradient(135deg, #0F74F2, #0856c8); `;
+    html += `color: #fff; border: none; border-radius: 8px; font-weight: 700; cursor: pointer; `;
+    html += `box-shadow: 0 4px 12px rgba(15, 116, 242, 0.3);">`;
+    html += `📊 View Detailed Report`;
+    html += `</button>`;
+    html += `</div>`;
+
+    return html;
+  }
+
+  function showDetailedReport(data) {
+    const verdict = data.verdict || 'Unknown';
+    const truthPct = data.truth_percentage || 50;
+    const detailedReport = data.detailed_report || {};
+    const stats = detailedReport.statistics || {};
+    const resources = detailedReport.categorized_resources || {};
+    const explanation = detailedReport.detailed_explanation || {};
+    const extractedContent = data.extracted_content || {};
+
+    // Determine colors
+    let verdictColor = '#94a3b8';
+    let verdictIcon = '❓';
+    if (verdict.toLowerCase() === 'real') {
+      verdictColor = '#22c55e';
+      verdictIcon = '✅';
+    } else if (verdict.toLowerCase() === 'fake') {
+      verdictColor = '#ef4444';
+      verdictIcon = '❌';
+    } else if (verdict.toLowerCase() === 'mixed') {
+      verdictColor = '#f59e0b';
+      verdictIcon = '⚠️';
+    }
+
+    let html = `<div style="color: #e8f6ff; max-height: 75vh; overflow-y: auto; padding: 20px;">`;
+
+    // Header with large percentage
+    html += `<div style="text-align: center; margin-bottom: 32px; padding: 28px; background: linear-gradient(135deg, rgba(15, 116, 242, 0.15), rgba(0, 194, 199, 0.15)); border-radius: 16px; border: 1px solid rgba(255,255,255,0.15);">`;
+    html += `<div style="font-size: 64px; margin-bottom: 12px;">${verdictIcon}</div>`;
+    html += `<div style="font-size: 36px; font-weight: 900; color: ${verdictColor}; margin-bottom: 12px; text-transform: uppercase; letter-spacing: 1px;">${verdict}</div>`;
+    html += `<div style="font-size: 56px; font-weight: 900; color: ${verdictColor}; text-shadow: 0 4px 12px rgba(0,0,0,0.3);">${truthPct}%</div>`;
+    html += `<div style="font-size: 16px; opacity: 0.9; margin-top: 12px; font-weight: 600;">Truth Score</div>`;
+    html += `</div>`;
+
+    // Section 0: Extracted Content (if from URL or file)
+    if (extractedContent.source_type && extractedContent.source_type !== 'text') {
+      html += `<div style="margin-bottom: 28px;">`;
+      html += `<h4 style="color: #60a5fa; margin-bottom: 16px; font-size: 20px; font-weight: 800; display: flex; align-items: center; gap: 8px;"><span style="font-size: 24px;">📥</span> Extracted Content</h4>`;
+      html += `<div style="background: rgba(96, 165, 250, 0.08); padding: 20px; border-radius: 12px; border-left: 4px solid #60a5fa;">`;
+
+      // Source info
+      html += `<div style="margin-bottom: 16px; padding-bottom: 16px; border-bottom: 1px solid rgba(255,255,255,0.1);">`;
+      html += `<div style="display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 12px;">`;
+      html += `<div><strong style="color: #60a5fa;">Source Type:</strong> ${extractedContent.source_type === 'url' ? '🌐 URL' : '📄 File'}</div>`;
+      if (extractedContent.word_count) {
+        html += `<div><strong style="color: #60a5fa;">Words:</strong> ${extractedContent.word_count.toLocaleString()}</div>`;
+      }
+      if (extractedContent.total_length) {
+        html += `<div><strong style="color: #60a5fa;">Characters:</strong> ${extractedContent.total_length.toLocaleString()}</div>`;
+      }
+      html += `</div>`;
+
+      if (extractedContent.page_title) {
+        html += `<div style="margin-top: 8px;"><strong style="color: #60a5fa;">Page Title:</strong> ${extractedContent.page_title}</div>`;
+      }
+      if (extractedContent.url) {
+        html += `<div style="margin-top: 8px;"><strong style="color: #60a5fa;">URL:</strong> <a href="${extractedContent.url}" target="_blank" style="color: #60a5fa; word-break: break-all;">${extractedContent.url}</a></div>`;
+      }
+      if (extractedContent.files && extractedContent.files.length > 0) {
+        html += `<div style="margin-top: 8px;"><strong style="color: #60a5fa;">Files:</strong> ${extractedContent.files.join(', ')}</div>`;
+      }
+      html += `</div>`;
+
+      // Extracted text preview
+      if (extractedContent.extracted_text) {
+        html += `<div style="margin-top: 16px;">`;
+        html += `<strong style="color: #60a5fa; display: block; margin-bottom: 8px;">Content Preview:</strong>`;
+        html += `<div style="background: rgba(0,0,0,0.3); padding: 16px; border-radius: 8px; font-family: monospace; font-size: 13px; line-height: 1.6; max-height: 200px; overflow-y: auto; white-space: pre-wrap; word-break: break-word;">`;
+        html += extractedContent.extracted_text.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        html += `</div>`;
+        html += `</div>`;
+      }
+
+      html += `</div>`;
+      html += `</div>`;
+    }
+
+    // Section 1: What's Inside the Content
+    if (explanation.content_summary) {
+      html += `<div style="margin-bottom: 28px;">`;
+      html += `<h4 style="color: #60a5fa; margin-bottom: 16px; font-size: 20px; font-weight: 800; display: flex; align-items: center; gap: 8px;"><span style="font-size: 24px;">📄</span> What's Inside This Content</h4>`;
+      html += `<div style="background: linear-gradient(135deg, rgba(96, 165, 250, 0.08), rgba(59, 130, 246, 0.05)); padding: 20px; border-radius: 12px; border-left: 4px solid #60a5fa; line-height: 1.7;">`;
+      html += `<p style="margin: 0; font-size: 15px;">${explanation.content_summary}</p>`;
+      html += `</div>`;
+      html += `</div>`;
+    }
+
+    // Section 2: Why It's Fake/Real - Detailed Reasoning
+    if (explanation.verdict_reasoning) {
+      html += `<div style="margin-bottom: 28px;">`;
+      html += `<h4 style="color: ${verdictColor}; margin-bottom: 16px; font-size: 20px; font-weight: 800; display: flex; align-items: center; gap: 8px;"><span style="font-size: 24px;">🔍</span> Detailed Analysis</h4>`;
+      html += `<div style="background: rgba(255,255,255,0.04); padding: 20px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1); line-height: 1.8;">`;
+      // Convert markdown-style formatting to HTML
+      const formattedReasoning = explanation.verdict_reasoning
+        .replace(/\*\*(.*?)\*\*/g, '<strong style="color: #e8f6ff;">$1</strong>')
+        .replace(/\n/g, '<br/>');
+      html += `<div style="font-size: 15px;">${formattedReasoning}</div>`;
+      html += `</div>`;
+      html += `</div>`;
+    }
+
+    // Section 3: Statistical Report
+    html += `<div style="margin-bottom: 28px;">`;
+    html += `<h4 style="color: #60a5fa; margin-bottom: 16px; font-size: 20px; font-weight: 800; display: flex; align-items: center; gap: 8px;"><span style="font-size: 24px;">📊</span> Statistical Report</h4>`;
+    html += `<div style="background: rgba(255,255,255,0.04); padding: 20px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1);">`;
+    html += `<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px;">`;
+
+    // Stat cards
+    const statCards = [
+      { label: 'Total Sources', value: stats.total_sources || 0, icon: '📚' },
+      { label: 'Fact Checkers', value: stats.fact_checkers_count || 0, icon: '✓' },
+      { label: 'News Sources', value: stats.news_sources_count || 0, icon: '📰' },
+      { label: 'Avg Credibility', value: `${((stats.average_credibility || 0.5) * 100).toFixed(0)}%`, icon: '⭐' },
+      { label: 'Supporting', value: stats.supporting_count || 0, icon: '✅', color: '#22c55e' },
+      { label: 'Refuting', value: stats.refuting_count || 0, icon: '❌', color: '#ef4444' },
+      { label: 'Mixed', value: stats.mixed_count || 0, icon: '⚠️', color: '#f59e0b' },
+      { label: 'Unverified', value: stats.unverified_count || 0, icon: '❓', color: '#94a3b8' }
+    ];
+
+    statCards.forEach(stat => {
+      html += `<div style="background: rgba(255,255,255,0.05); padding: 14px; border-radius: 10px; text-align: center; border: 1px solid rgba(255,255,255,0.08);">`;
+      html += `<div style="font-size: 24px; margin-bottom: 6px;">${stat.icon}</div>`;
+      html += `<div style="font-size: 24px; font-weight: 800; color: ${stat.color || '#e8f6ff'}; margin-bottom: 4px;">${stat.value}</div>`;
+      html += `<div style="font-size: 12px; opacity: 0.8; text-transform: uppercase; letter-spacing: 0.5px;">${stat.label}</div>`;
+      html += `</div>`;
+    });
+
+    html += `</div>`;
+    html += `</div>`;
+    html += `</div>`;
+
+    // Section 4: Resources Collected
+    html += `<div style="margin-bottom: 28px;">`;
+    html += `<h4 style="color: #60a5fa; margin-bottom: 16px; font-size: 20px; font-weight: 800; display: flex; align-items: center; gap: 8px;"><span style="font-size: 24px;">📚</span> Resources Collected</h4>`;
+
+    // Supporting sources
+    if (resources.supporting && resources.supporting.length > 0) {
+      html += `<div style="margin-bottom: 20px;">`;
+      html += `<div style="font-weight: 700; color: #22c55e; margin-bottom: 12px; font-size: 16px; display: flex; align-items: center; gap: 6px;"><span>✅</span> Supporting Sources (${resources.supporting.length})</div>`;
+      resources.supporting.forEach(r => {
+        html += `<div style="background: rgba(34, 197, 94, 0.12); padding: 14px; border-radius: 10px; margin-bottom: 10px; border-left: 4px solid #22c55e; transition: transform 0.2s;">`;
+        html += `<div style="font-weight: 700; margin-bottom: 6px; font-size: 15px; color: #22c55e;">${r.source}</div>`;
+        html += `<a href="${r.url}" target="_blank" style="color: #60a5fa; text-decoration: none; font-size: 14px; display: block; margin-bottom: 6px; line-height: 1.5;">${r.title}</a>`;
+        html += `<div style="font-size: 12px; opacity: 0.8; display: flex; gap: 12px;">`;
+        html += `<span>🎯 Credibility: ${(r.credibility * 100).toFixed(0)}%</span>`;
+        html += `<span>📌 Relevance: ${(r.relevance * 100).toFixed(0)}%</span>`;
+        html += `</div>`;
+        html += `</div>`;
+      });
+      html += `</div>`;
+    }
+
+    // Refuting sources
+    if (resources.refuting && resources.refuting.length > 0) {
+      html += `<div style="margin-bottom: 20px;">`;
+      html += `<div style="font-weight: 700; color: #ef4444; margin-bottom: 12px; font-size: 16px; display: flex; align-items: center; gap: 6px;"><span>❌</span> Refuting Sources (${resources.refuting.length})</div>`;
+      resources.refuting.forEach(r => {
+        html += `<div style="background: rgba(239, 68, 68, 0.12); padding: 14px; border-radius: 10px; margin-bottom: 10px; border-left: 4px solid #ef4444;">`;
+        html += `<div style="font-weight: 700; margin-bottom: 6px; font-size: 15px; color: #ef4444;">${r.source}</div>`;
+        html += `<a href="${r.url}" target="_blank" style="color: #60a5fa; text-decoration: none; font-size: 14px; display: block; margin-bottom: 6px; line-height: 1.5;">${r.title}</a>`;
+        html += `<div style="font-size: 12px; opacity: 0.8; display: flex; gap: 12px;">`;
+        html += `<span>🎯 Credibility: ${(r.credibility * 100).toFixed(0)}%</span>`;
+        html += `<span>📌 Relevance: ${(r.relevance * 100).toFixed(0)}%</span>`;
+        html += `</div>`;
+        html += `</div>`;
+      });
+      html += `</div>`;
+    }
+
+    // Neutral sources
+    if (resources.neutral && resources.neutral.length > 0) {
+      html += `<div style="margin-bottom: 20px;">`;
+      html += `<div style="font-weight: 700; color: #94a3b8; margin-bottom: 12px; font-size: 16px; display: flex; align-items: center; gap: 6px;"><span>ℹ️</span> Additional Resources (${resources.neutral.length})</div>`;
+      resources.neutral.forEach(r => {
+        html += `<div style="background: rgba(148, 163, 184, 0.12); padding: 14px; border-radius: 10px; margin-bottom: 10px; border-left: 4px solid #94a3b8;">`;
+        html += `<div style="font-weight: 700; margin-bottom: 6px; font-size: 15px; color: #94a3b8;">${r.source}</div>`;
+        html += `<a href="${r.url}" target="_blank" style="color: #60a5fa; text-decoration: none; font-size: 14px; line-height: 1.5;">${r.title}</a>`;
+        html += `</div>`;
+      });
+      html += `</div>`;
+    }
+
+    if (!resources.supporting?.length && !resources.refuting?.length && !resources.neutral?.length) {
+      html += `<div style="opacity: 0.7; padding: 24px; text-align: center; background: rgba(255,255,255,0.03); border-radius: 10px; border: 1px dashed rgba(255,255,255,0.1);">`;
+      html += `<div style="font-size: 32px; margin-bottom: 8px;">🔍</div>`;
+      html += `<div>No external resources were collected for this analysis.</div>`;
+      html += `</div>`;
+    }
+    html += `</div>`;
+
+    // Section 5: Additional Information
+    html += `<div style="margin-bottom: 20px;">`;
+    html += `<h4 style="color: #60a5fa; margin-bottom: 16px; font-size: 20px; font-weight: 800; display: flex; align-items: center; gap: 8px;"><span style="font-size: 24px;">ℹ️</span> Additional Information</h4>`;
+    html += `<div style="background: rgba(255,255,255,0.04); padding: 20px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1);">`;
+
+    if (explanation.core_claim) {
+      html += `<div style="margin-bottom: 16px; padding-bottom: 16px; border-bottom: 1px solid rgba(255,255,255,0.08);">`;
+      html += `<strong style="color: #60a5fa; font-size: 14px; text-transform: uppercase; letter-spacing: 0.5px;">Core Claim</strong>`;
+      html += `<p style="margin: 8px 0 0 0; line-height: 1.6;">${explanation.core_claim}</p>`;
+      html += `</div>`;
+    }
+
+    if (explanation.entities) {
+      html += `<div style="margin-bottom: 16px; padding-bottom: 16px; border-bottom: 1px solid rgba(255,255,255,0.08);">`;
+      html += `<strong style="color: #60a5fa; font-size: 14px; text-transform: uppercase; letter-spacing: 0.5px;">Entities Identified</strong>`;
+      html += `<p style="margin: 8px 0 0 0; line-height: 1.6;">${explanation.entities}</p>`;
+      html += `</div>`;
+    }
+
+    if (explanation.red_flags && explanation.red_flags.length > 0) {
+      html += `<div style="margin-bottom: 16px; padding-bottom: 16px; border-bottom: 1px solid rgba(255,255,255,0.08);">`;
+      html += `<strong style="color: #f59e0b; font-size: 14px; text-transform: uppercase; letter-spacing: 0.5px;">⚠️ Red Flags</strong>`;
+      html += `<ul style="margin: 8px 0 0 0; padding-left: 24px; line-height: 1.8;">`;
+      explanation.red_flags.forEach(flag => {
+        html += `<li style="margin: 6px 0;">${flag}</li>`;
+      });
+      html += `</ul>`;
+      html += `</div>`;
+    }
+
+    if (explanation.verification_tips && explanation.verification_tips.length > 0) {
+      html += `<div>`;
+      html += `<strong style="color: #22c55e; font-size: 14px; text-transform: uppercase; letter-spacing: 0.5px;">✓ How to Verify</strong>`;
+      html += `<ul style="margin: 8px 0 0 0; padding-left: 24px; line-height: 1.8;">`;
+      explanation.verification_tips.forEach(tip => {
+        html += `<li style="margin: 6px 0;">${tip}</li>`;
+      });
+      html += `</ul>`;
+      html += `</div>`;
+    }
+
+    html += `</div>`;
+    html += `</div>`;
+
+    html += `</div>`;
+
+    showModal('custom', '📊 Detailed Analysis Report', html);
+  }
+
+  // Settings modal with live preferences (ChatGPT-like)
+  async function openSettingsModal() {
+    try {
+      const data = await fetchJSON('{% url "dashboard:preferences" %}');
+      const p = data.preferences || {};
+      const html = `
+      <div class="profile-card" style="min-width: 520px;">
+        <div class="profile-row" style="justify-content: space-between;">
+          <div class="profile-label">Theme</div>
+          <div>
+            <select id="prefTheme" class="form-select">
+              <option value="dark">Dark</option>
+              <option value="light">Light</option>
+              <option value="auto">Auto</option>
+            </select>
+          </div>
+        </div>
+        <div class="profile-row" style="justify-content: space-between;">
+          <div class="profile-label">Auto-save conversations</div>
+          <div class="form-check form-switch"><input id="prefAutoSave" class="form-check-input" type="checkbox"></div>
+        </div>
+        <div class="profile-row" style="justify-content: space-between;">
+          <div class="profile-label">Show timestamps</div>
+          <div class="form-check form-switch"><input id="prefTimestamps" class="form-check-input" type="checkbox"></div>
+        </div>
+        <div class="profile-row" style="justify-content: space-between;">
+          <div class="profile-label">Enable sound effects</div>
+          <div class="form-check form-switch"><input id="prefSounds" class="form-check-input" type="checkbox"></div>
+        </div>
+        <div class="profile-row" style="justify-content: space-between;">
+          <div class="profile-label">Max conversations</div>
+          <div style="display:flex; align-items:center; gap:10px;">
+            <input id="prefMax" type="range" class="form-range" min="1" max="500" step="1" style="width:260px;">
+            <span id="prefMaxVal"></span>
+          </div>
+        </div>
+        <div class="profile-row" style="justify-content:flex-end; gap:10px;">
+          <button id="prefClose" class="btn btn-secondary">Close</button>
+          <button id="prefSave" class="btn btn-primary-custom">Save</button>
+        </div>
+      </div>`;
+      showModal('custom', 'Settings', html);
+      const elTheme = document.getElementById('prefTheme');
+      const elAuto = document.getElementById('prefAutoSave');
+      const elTime = document.getElementById('prefTimestamps');
+      const elSound = document.getElementById('prefSounds');
+      const elMax = document.getElementById('prefMax');
+      const elMaxVal = document.getElementById('prefMaxVal');
+      elTheme.value = p.theme || 'dark';
+      elAuto.checked = !!p.auto_save_conversations;
+      elTime.checked = !!p.show_timestamps;
+      elSound.checked = !!p.enable_sound_effects;
+      elMax.value = String(p.max_conversations || 50);
+      elMaxVal.textContent = elMax.value;
+      elMax.addEventListener('input', () => elMaxVal.textContent = elMax.value);
+      document.getElementById('prefClose').onclick = () => closeModal();
+      document.getElementById('prefSave').onclick = async () => {
+        try {
+          await fetch('{% url "dashboard:preferences" %}', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCSRFToken() },
+            credentials: 'same-origin',
+            body: JSON.stringify({
+              theme: elTheme.value,
+              auto_save_conversations: elAuto.checked,
+              show_timestamps: elTime.checked,
+              enable_sound_effects: elSound.checked,
+              max_conversations: Number(elMax.value)
+            })
+          });
+          showToast('Settings saved', 'success');
+          closeModal();
+        } catch (e) {
+          showToast('Failed to save settings', 'danger');
+        }
+      };
+    } catch (e) {
+      showToast('Failed to load settings', 'danger');
+    }
+  }
+
+  const sidebarSettingsBtn = document.getElementById('btnSettings');
+  if (sidebarSettingsBtn) {
+    sidebarSettingsBtn.addEventListener('click', openSettingsModal);
+  }
+
+  // Profile dropdown interactions
+  document.addEventListener('DOMContentLoaded', function () {
+    const wrap = document.getElementById('profileWrap');
+    const menu = document.getElementById('profileMenu');
+    if (!wrap || !menu) return;
+    // Toggle on avatar/name click
+    wrap.addEventListener('click', function (e) {
+      // only toggle if clicked on avatar or name
+      if (e.target.closest('.profile-avatar') || e.target.closest('.profile-name')) {
+        menu.classList.toggle('show');
+        e.stopPropagation();
+      }
+    });
+    // Close on outside click
+    document.addEventListener('click', function (e) {
+      if (!wrap.contains(e.target)) menu.classList.remove('show');
+    });
+    // Close on Escape
+    document.addEventListener('keydown', function (e) { if (e.key === 'Escape') menu.classList.remove('show'); });
+
+    // Profile Info modal
+    const profileBtn = document.getElementById('menuProfile');
+    if (profileBtn) {
+      profileBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        const meta = document.getElementById('userMeta');
+        const name = meta?.dataset.fullname || '';
+        const username = meta?.dataset.username || '';
+        const gender = meta?.dataset.gender || 'Not set';
+        const joined = meta?.dataset.datejoined || '';
+        const photo = meta?.dataset.photo || '';
+        const gridCells = new Array(210).fill(0).map(() => '<div class="activity-cell"></div>').join('');
+        const html = `
+        <div class="profile-card">
+          <div class="profile-hero">
+            ${photo ? `<div class="hero-avatar"><img src="${photo}" alt="Profile"/></div>` : `<div class="hero-fallback">${(username || name || '?').charAt(0).toUpperCase()}</div>`}
+            <div class="hero-text">
+              <div class="hero-name">${name}</div>
+              <div class="hero-username">${username}</div>
+            </div>
+          </div>
+          <div class="profile-row"><div class="profile-label">Name</div><div>${name}</div></div>
+          <div class="profile-row"><div class="profile-label">Gender</div><div>${gender}</div></div>
+          <div class="profile-row"><div class="profile-label">Account Created</div><div>${joined}</div></div>
+          <div class="profile-row"><div class="profile-label">Username</div><div>${username}</div></div>
+          <div class="activity-section">
+            <div class="activity-header">
+              <div style="font-weight:700;">Activity</div>
+              <select id="yearSelect" class="year-select"></select>
+            </div>
+            <div id="activityYear" class="activity-year"></div>
+            <div class="legend" style="margin-top:10px;">Less <span class="activity-cell"></span><span class="activity-cell" style="background:#14532d"></span><span class="activity-cell" style="background:#166534"></span><span class="activity-cell" style="background:#16a34a"></span><span class="activity-cell" style="background:#22c55e"></span> More</div>
+          </div>
+        </div>`;
+        showModal('custom', 'Profile Info', html);
+        menu.classList.remove('show');
+
+        // Build year dropdown (current year -> current-5)
+        const now = new Date();
+        const currentYear = now.getFullYear();
+        const years = Array.from({ length: 6 }, (_, i) => currentYear - i);
+        const yearSelect = document.getElementById('yearSelect');
+        const activityYear = document.getElementById('activityYear');
+        if (yearSelect && activityYear) {
+          yearSelect.innerHTML = years.map((y) => `<option value="${y}">${y}</option>`).join('');
+          yearSelect.value = String(currentYear);
+          const renderYear = (year) => { activityYear.innerHTML = renderYearHeatmap(year); };
+          yearSelect.addEventListener('change', () => renderYear(Number(yearSelect.value)));
+          renderYear(currentYear);
+        }
+      });
+    }
+  });
+
+  function showModal(type, customTitle = null, customHtml = null) {
+    const modal = document.getElementById('modalBackdrop');
+    const title = document.getElementById('modalTitle');
+    const body = document.getElementById('modalBody');
+    modal.style.display = 'flex';
+    if (type === 'settings') {
+      title.textContent = 'Settings';
+      body.innerHTML = '<p>Use the existing settings in your account/profile pages.</p>';
+    } else if (type === 'resources') {
+      title.textContent = 'Resources';
+      body.innerHTML = '<p>Helpful links and docs coming soon.</p>';
+    } else if (type === 'custom') {
+      title.textContent = customTitle || 'Info';
+      body.innerHTML = customHtml || '';
+    }
+  }
+  function closeModal() { document.getElementById('modalBackdrop').style.display = 'none'; }
+</script>
+{% endblock %}

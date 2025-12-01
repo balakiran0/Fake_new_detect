@@ -211,14 +211,14 @@ AUTHENTICATION_BACKENDS = [
 ]
 
 # Allauth settings (updated to new format)
-ACCOUNT_EMAIL_VERIFICATION = 'mandatory'
+ACCOUNT_EMAIL_VERIFICATION = 'none'
 ACCOUNT_LOGIN_METHODS = ['email']
+ACCOUNT_EMAIL_REQUIRED = True
 ACCOUNT_SIGNUP_FIELDS = ['email*', 'password1*', 'password2*']
 ACCOUNT_USER_MODEL_USERNAME_FIELD = None
 ACCOUNT_USER_MODEL_EMAIL_FIELD = 'email'
 ACCOUNT_UNIQUE_EMAIL = True
 ACCOUNT_LOGIN_ON_EMAIL_CONFIRMATION = True
-ACCOUNT_LOGOUT_ON_GET = True
 ACCOUNT_FORMS = {
     'signup': 'dashboard.forms.CustomAllauthSignupForm',
 }
@@ -239,6 +239,14 @@ SOCIALACCOUNT_PROVIDERS = {
         'OAUTH_PKCE_ENABLED': True,
     }
 }
+
+# Do not require email verification for social logins (Google)
+SOCIALACCOUNT_EMAIL_VERIFICATION = 'none'
+SOCIALACCOUNT_AUTO_SIGNUP = True
+SOCIALACCOUNT_EMAIL_REQUIRED = True
+
+# Use custom adapter to mark social emails verified & primary automatically
+SOCIALACCOUNT_ADAPTER = 'dashboard.adapters.GoogleSocialAccountAdapter'
 
 # Redirect URLs
 LOGIN_REDIRECT_URL = '/dashboard/'

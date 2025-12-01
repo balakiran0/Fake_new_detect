@@ -5,7 +5,8 @@ from .views import (
     DashboardLoginView, DashboardHomeView, SignUpView, confirm_email, 
     VerifyOTPView, ResendOTPView, CustomPasswordResetView, CustomPasswordResetDoneView, 
     ProfileView, CustomLogoutView, ConversationListView, ConversationDetailView,
-    CreateConversationView, DeleteConversationView, SaveMessageView
+    CreateConversationView, DeleteConversationView, SaveMessageView, RenameConversationView,
+    PreferencesAPIView
 )
 
 app_name = "dashboard"
@@ -34,5 +35,7 @@ urlpatterns = [
     path("api/conversations/create/", CreateConversationView.as_view(), name="create_conversation"),
     path("api/conversations/<uuid:conversation_id>/", ConversationDetailView.as_view(), name="conversation_detail"),
     path("api/conversations/<uuid:conversation_id>/delete/", DeleteConversationView.as_view(), name="delete_conversation"),
+    path("api/conversations/<uuid:conversation_id>/rename/", RenameConversationView.as_view(), name="rename_conversation"),
     path("api/messages/save/", SaveMessageView.as_view(), name="save_message"),
+    path("api/preferences/", PreferencesAPIView.as_view(), name="preferences"),
 ]

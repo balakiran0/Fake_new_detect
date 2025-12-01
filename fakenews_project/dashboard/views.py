@@ -29,7 +29,7 @@ class DashboardLoginView(LoginView):
 
 
 class DashboardHomeView(LoginRequiredMixin, TemplateView):
-    template_name = "index.html"  # Use the main dashboard interface
+    template_name = "inside_ui.html"  # Blue inside UI layout
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -513,6 +513,94 @@ class CreateConversationView(LoginRequiredMixin, View):
                 'success': False,
                 'error': str(e)
             }, status=500)
+
+
+@method_decorator(csrf_exempt, name='dispatch')
+class PreferencesAPIView(LoginRequiredMixin, View):
+    def get(self, request):
+        prefs, _ = UserPreferences.objects.get_or_create(
+            user=request.user,
+            defaults={
+                'theme': 'dark',
+                'accent_color': 'pink',
+                'language': 'en-US',
+                'auto_save_conversations': True,
+                'show_timestamps': True,
+                'enable_sound_effects': True,
+                'max_conversations': 50
+            }
+        )
+        return JsonResponse({
+            'success': True,
+            'preferences': {
+                'theme': prefs.theme,
+                'accent_color': prefs.accent_color,
+                'language': prefs.language,
+                'auto_save_conversations': prefs.auto_save_conversations,
+                'show_timestamps': prefs.show_timestamps,
+                'enable_sound_effects': prefs.enable_sound_effects,
+                'max_conversations': prefs.max_conversations,
+            }
+        })
+
+    def post(self, request):
+        try:
+            import json
+            data = json.loads(request.body or '{}')
+            prefs, _ = UserPreferences.objects.get_or_create(user=request.user)
+
+            theme = data.get('theme')
+            if theme in ['light', 'dark', 'system']:
+                prefs.theme = theme
+
+            accent_color = data.get('accent_color')
+            if accent_color in ['pink', 'blue', 'green', 'purple']:
+                prefs.accent_color = accent_color
+
+            language = data.get('language')
+            if language in ['en-US', 'en-GB', 'es-ES']:
+                prefs.language = language
+
+            if 'auto_save_conversations' in data:
+                prefs.auto_save_conversations = bool(data['auto_save_conversations'])
+            if 'show_timestamps' in data:
+                prefs.show_timestamps = bool(data['show_timestamps'])
+            if 'enable_sound_effects' in data:
+                prefs.enable_sound_effects = bool(data['enable_sound_effects'])
+            if 'max_conversations' in data:
+                try:
+                    val = int(data['max_conversations'])
+                    prefs.max_conversations = max(1, min(val, 500))
+                except Exception:
+                    pass
+
+            prefs.save()
+            return JsonResponse({'success': True})
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': str(e)}, status=500)
+
+
+@method_decorator(csrf_exempt, name='dispatch')
+class RenameConversationView(LoginRequiredMixin, View):
+    def post(self, request, conversation_id):
+        try:
+            import json
+            data = json.loads(request.body)
+            new_title = (data.get('title') or '').strip()
+            if not new_title:
+                return JsonResponse({'success': False, 'error': 'Title is required'}, status=400)
+            if len(new_title) > 200:
+                new_title = new_title[:200]
+
+            conversation = Conversation.objects.get(id=conversation_id, user=request.user)
+            conversation.title = new_title
+            conversation.save(update_fields=['title', 'updated_at'])
+
+            return JsonResponse({'success': True, 'title': conversation.title})
+        except Conversation.DoesNotExist:
+            return JsonResponse({'success': False, 'error': 'Conversation not found'}, status=404)
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': str(e)}, status=500)
 
 
 @method_decorator(csrf_exempt, name='dispatch')

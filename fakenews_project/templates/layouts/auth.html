@@ -4,184 +4,184 @@
 
 {% block extra_css %}
 .auth-wrapper {
-    min-height: 100vh;
-    display: grid;
-    grid-template-columns: 1.1fr 1fr;
+min-height: 100vh;
+display: grid;
+grid-template-columns: 1.1fr 1fr;
 }
 
 /* Left Visual Panel */
 .visual {
-    position: relative;
-    overflow: hidden;
-    background:
-        radial-gradient(1200px 800px at 20% 20%, #a21caf 0%, transparent 50%),
-        radial-gradient(1200px 800px at 80% 80%, #2563eb 0%, transparent 55%),
-        linear-gradient(120deg, var(--auth-bg) 0%, var(--auth-bg) 100%);
-    padding: 2rem;
-    display: flex;
-    align-items: stretch;
-    justify-content: center;
+position: relative;
+overflow: hidden;
+background:
+radial-gradient(1200px 800px at 20% 20%, #a21caf 0%, transparent 50%),
+radial-gradient(1200px 800px at 80% 80%, #2563eb 0%, transparent 55%),
+linear-gradient(120deg, var(--auth-bg) 0%, var(--auth-bg) 100%);
+padding: 2rem;
+display: flex;
+align-items: stretch;
+justify-content: center;
 }
 
 .visual-inner {
-    border-radius: 28px;
-    border: 2px solid rgba(255,255,255,0.7);
-    padding: 2.5rem 2rem;
-    color: #fff;
-    width: 85%;
-    max-width: 560px;
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-    background: linear-gradient(135deg, rgba(255,255,255,0.08), rgba(255,255,255,0.02));
-    backdrop-filter: blur(4px);
+border-radius: 28px;
+border: 2px solid rgba(255,255,255,0.7);
+padding: 2.5rem 2rem;
+color: #fff;
+width: 85%;
+max-width: 560px;
+display: flex;
+flex-direction: column;
+justify-content: space-between;
+background: linear-gradient(135deg, rgba(255,255,255,0.08), rgba(255,255,255,0.02));
+backdrop-filter: blur(4px);
 }
 
 .visual-quote-heading {
-    letter-spacing: 4px;
-    font-size: 0.8rem;
-    opacity: 0.9;
+letter-spacing: 4px;
+font-size: 0.8rem;
+opacity: 0.9;
 }
 
 .visual-title {
-    font-size: clamp(2rem, 4vw, 3.2rem);
-    font-weight: 700;
-    line-height: 1.12;
-    margin-top: 1.25rem;
+font-size: clamp(2rem, 4vw, 3.2rem);
+font-weight: 700;
+line-height: 1.12;
+margin-top: 1.25rem;
 }
 
 .visual-sub {
-    margin-top: 0.75rem;
-    color: rgba(255,255,255,0.85);
-    max-width: 26ch;
+margin-top: 0.75rem;
+color: rgba(255,255,255,0.85);
+max-width: 26ch;
 }
 
 /* Right Form Panel */
 .form-panel {
-    background: var(--auth-panel);
-    border-top-left-radius: 36px;
-    border-bottom-left-radius: 36px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: clamp(1rem, 3vw, 2rem);
+background: var(--auth-panel);
+border-top-left-radius: 36px;
+border-bottom-left-radius: 36px;
+display: flex;
+align-items: center;
+justify-content: center;
+padding: clamp(1rem, 3vw, 2rem);
 }
 
 .form-card {
-    width: 100%;
-    max-width: 460px;
+width: 100%;
+max-width: 460px;
 }
 
 .brand {
-    font-weight: 700;
-    color: var(--auth-text);
-    margin-bottom: 1rem;
-    display: flex;
-    align-items: center;
-    gap: .5rem;
+font-weight: 700;
+color: var(--auth-text);
+margin-bottom: 1rem;
+display: flex;
+align-items: center;
+gap: .5rem;
 }
 
 .welcome {
-    font-size: 1.75rem;
-    font-weight: 700;
-    color: var(--auth-text);
+font-size: 1.75rem;
+font-weight: 700;
+color: var(--auth-text);
 }
 
 .subtitle {
-    color: var(--text-muted);
-    margin-bottom: 1.25rem;
+color: var(--text-muted);
+margin-bottom: 1.25rem;
 }
 
 .form-control {
-    background: #f5f7fb;
-    border: 1px solid #e5e7eb;
-    padding: 0.9rem 1rem;
-    border-radius: 12px;
-    height: auto;
-    font-size: 0.95rem;
+background: #f5f7fb;
+border: 1px solid #e5e7eb;
+padding: 0.9rem 1rem;
+border-radius: 12px;
+height: auto;
+font-size: 0.95rem;
 }
 
 .form-label {
-    color: #374151;
-    font-weight: 600;
+color: #374151;
+font-weight: 600;
 }
 
 .actions-row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-top: .35rem;
-    margin-bottom: .75rem;
+display: flex;
+align-items: center;
+justify-content: space-between;
+margin-top: .35rem;
+margin-bottom: .75rem;
 }
 
 .link-muted {
-    color: var(--text-muted);
-    text-decoration: none;
+color: var(--text-muted);
+text-decoration: none;
 }
 
 .link-muted:hover {
-    color: var(--auth-text);
-    text-decoration: underline;
+color: var(--auth-text);
+text-decoration: underline;
 }
 
 .btn-primary-solid {
-    width: 100%;
-    border: none;
-    padding: 0.9rem 1rem;
-    border-radius: 12px;
-    background: #000;
-    color: #fff;
-    font-weight: 700;
-    transition: var(--transition);
+width: 100%;
+border: none;
+padding: 0.9rem 1rem;
+border-radius: 12px;
+background: #000;
+color: #fff;
+font-weight: 700;
+transition: var(--transition);
 }
 
 .btn-primary-solid:hover {
-    background: #333;
-    transform: translateY(-1px);
+background: #333;
+transform: translateY(-1px);
 }
 
 .g-btn {
-    width: 100%;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: .5rem;
-    border: 1px solid #e5e7eb;
-    background: #fff;
-    color: var(--auth-text);
-    border-radius: 12px;
-    padding: 0.85rem 1rem;
-    font-weight: 600;
-    text-decoration: none;
-    transition: var(--transition);
+width: 100%;
+display: inline-flex;
+align-items: center;
+justify-content: center;
+gap: .5rem;
+border: 1px solid #e5e7eb;
+background: #fff;
+color: var(--auth-text);
+border-radius: 12px;
+padding: 0.85rem 1rem;
+font-weight: 600;
+text-decoration: none;
+transition: var(--transition);
 }
 
 .g-btn:hover {
-    background: #f9f9f9;
-    transform: translateY(-1px);
+background: #f9f9f9;
+transform: translateY(-1px);
 }
 
 .switch-auth {
-    text-align: center;
-    margin-top: 1rem;
-    color: var(--text-muted);
+text-align: center;
+margin-top: 1rem;
+color: var(--text-muted);
 }
 
 .back-home {
-    text-align: center;
-    margin-top: .75rem;
+text-align: center;
+margin-top: .75rem;
 }
 
 @media (max-width: 992px) {
-    .auth-wrapper {
-        grid-template-columns: 1fr;
-    }
-    .form-panel {
-        border-radius: 0;
-    }
-    .visual {
-        display: none;
-    }
+.auth-wrapper {
+grid-template-columns: 1fr;
+}
+.form-panel {
+border-radius: 0;
+}
+.visual {
+display: none;
+}
 }
 {% endblock %}
 
@@ -191,17 +191,14 @@
         <div class="visual-inner">
             <div>
                 <div class="visual-quote-heading">TRUTH MATTERS</div>
-                <h1 class="visual-title">{% block visual_title %}Fight Misinformation with AI-Powered Fact Checking{% endblock %}</h1>
-                <p class="visual-sub">{% block visual_subtitle %}Advanced verification system powered by machine learning and trusted sources.{% endblock %}</p>
-            </div>
-            <div>
-                <div style="opacity: 0.7; font-size: 0.9rem;">
-                    Trusted by thousands of users worldwide
-                </div>
+                <h1 class="visual-title">{% block visual_title %}Fight Misinformation with AI-Powered Fact Checking{%
+                    endblock %}</h1>
+                <p class="visual-sub">{% block visual_subtitle %}Advanced verification system powered by machine
+                    learning and trusted sources.{% endblock %}</p>
             </div>
         </div>
     </section>
-    
+
     <section class="form-panel">
         <div class="form-card">
             {% block form_content %}{% endblock %}
